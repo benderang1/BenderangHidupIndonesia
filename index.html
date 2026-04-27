@@ -479,7 +479,8 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      transition: opacity 0.8s
+      transition: opacity 0.8s;
+      height: 100%;
     }
 
     /* Progress bar fixed di paling bawah layar dashboard */
@@ -653,7 +654,6 @@
     .pcard-overdue {
       background: #1a0a0a;
       border-color: #5c1a1a;
-      overflow: scroll;
     }
 
     .pcard-today {
@@ -721,8 +721,15 @@
     .task-items {
       display: flex;
       flex-direction: column;
-      gap: 5px
+      gap: 5px;
+      height: 100%;
+      max-height: 90px;
+      overflow-y: scroll;
+      scrollbar-width: none;
+      scrollbar-color: rgb(26, 31, 46) rgb(15, 18, 24);
+      padding-right: 10px;
     }
+
 
     .task-item {
       display: flex;
@@ -788,6 +795,17 @@
       font-style: italic
     }
 
+    .prog-container {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #1a1f2e;
+      overflow: scroll;
+    }
+
+    .prog-container::-webkit-scrollbar {
+      display: none;
+    }
+
     .prog-label {
       font-size: 11px;
       text-transform: uppercase;
@@ -799,8 +817,9 @@
 
     .prog-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      height: 100%;
     }
 
     .prog-row {
@@ -880,7 +899,7 @@
     }
 
     .tv-footer {
-      display: flex;
+      display: none;
       justify-content: space-between;
       align-items: center;
       padding: 8px 0 4px 0;
@@ -1909,7 +1928,7 @@
           </div>
         </div>
         <div class="priority-grid" id="priority-grid"></div>
-        <div>
+        <div class="prog-container">
           <div class="prog-label">Progress — semua project & inquiry (on progress & belum selesai)</div>
           <div class="prog-grid" id="prog-grid"></div>
         </div>
@@ -2982,6 +3001,7 @@
     // ============================================================
     // TV DASHBOARD RENDER
     // ============================================================
+
     function renderDashboard() {
       const { overdue, today, risk, tomorrow } = getDashboardTasks();
 
@@ -2989,7 +3009,8 @@
       if (!grid) return;
 
       function card(cls, lbl, lblCls, cntCls, items, dotCls, daysCls) {
-        const it = items.slice(0, 4).map(x => `<div class="task-item"><div class="dot ${dotCls}"></div><span class="tname" title="${esc(x.proj)} — ${esc(x.task)}">${esc(x.task)}</span><span class="tperson">${esc(x.person?.split(" ")[0] || "")}</span>${x.d !== undefined ? `<span class="tdays ${daysCls || ''}">${x.d < 0 ? Math.abs(x.d) + "h lalu" : x.d === 0 ? "Hari ini" : x.d + "h lagi"}</span>` : ""}</div>`).join("") || `<div class="no-items">—</div>`;
+        console.log(items);
+        const it = items.slice(0, items.length).map(x => `<div class="task-item"><div class="dot ${dotCls}"></div><span class="tname" title="${esc(x.proj)} — ${esc(x.task)}">${esc(x.task)}</span><span class="tperson">${esc(x.person?.split(" ")[0] || "")}</span>${x.d !== undefined ? `<span class="tdays ${daysCls || ''}">${x.d < 0 ? Math.abs(x.d) + "h lalu" : x.d === 0 ? "Hari ini" : x.d + "h lagi"}</span>` : ""}</div>`).join("") || `<div class="no-items">—</div>`;
         return `<div class="pcard ${cls}"><div class="pcard-label ${lbl}">${lbl.replace("lbl-", "").toUpperCase()}</div><div class="pcard-count ${cntCls}">${items.length}</div><div class="task-items">${it}</div></div>`;
       }
       grid.innerHTML =
