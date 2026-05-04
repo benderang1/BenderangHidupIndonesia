@@ -993,17 +993,20 @@
     }
 
     .pr-stage-task {
-      font-size: 10px;
+      font-size: 11px;
       color: #9097ab;
       display: flex;
       align-items: center;
       gap: 4px;
+      margin-bottom: 2px;
     }
 
     .st-task-done {
-      color: #1D9E75;
-      text-decoration: line-through;
-      opacity: 0.6;
+      color: #5DCAA5;
+      text-decoration: none;
+      opacity: 1;
+      font-weight: 700;
+      font-size: 12px;
     }
 
     .prog-row {
@@ -3269,9 +3272,9 @@
           const stClass = s.status === "Completed" ? "st-completed" : s.status === "In Progress" ? "st-progress" : "st-pending";
           const tasksHtml = s.tasks.map(t => `
             <div class="pr-stage-task ${t.pct >= 100 ? 'st-task-done' : ''}">
-              <div class="dot" style="background:${t.pct >= 100 ? '#1D9E75' : '#EF9F27'}; width:4px; height:4px; flex-shrink:0"></div>
+              <div class="dot" style="background:${t.pct >= 100 ? '#5DCAA5' : t.pct > 0 ? '#EF9F27' : '#E24B4A'}; width:5px; height:5px; flex-shrink:0"></div>
               <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(t.name)}</span>
-              <span>${t.pct}%</span>
+              <span style="color:${t.pct === 0 ? '#E24B4A' : t.pct >= 100 ? '#5DCAA5' : '#d0d4e0'}; font-weight:700; margin-left:12px;">${t.pct}%</span>
             </div>
           `).join("");
 
@@ -3279,7 +3282,7 @@
             <div class="pr-stage-card">
               <div class="pr-stage-name" title="${esc(s.name)}">${esc(s.name)}</div>
               <div class="pr-stage-row">
-                <div class="pr-stage-pct">${s.pct}%</div>
+                <div class="pr-stage-pct" style="color:${s.pct === 0 ? '#E24B4A' : '#d0d4e0'}; margin-right: 8px;">${s.pct}%</div>
                 <div class="pr-stage-status ${stClass}">${s.status}</div>
               </div>
               <div class="pr-stage-tasks">
@@ -3289,23 +3292,23 @@
         }).join("");
 
         return `
-          <div class="prog-row">
-            <div class="pr-header">
+          <div class="prog-row" style="margin-bottom: 24px; padding: 20px;">
+            <div class="pr-header" style="margin-bottom: 12px;">
               <div class="pr-left">
-                <div class="pr-name" style="font-size:22px; font-weight:700; white-space:normal;" title="${esc(p.name)}">${esc(p.name)}</div>
-                <div class="pr-meta" style="margin-top:4px">
+                <div class="pr-name" style="font-size:24px; font-weight:800; white-space:normal; margin-right: 30px; line-height: 1.2;" title="${esc(p.name)}">${esc(p.name)}</div>
+                <div class="pr-meta" style="margin-top:8px; font-size: 16px;">
                   <span style="color:#EF9F27; font-weight:800">${esc(p.overallStatus.toUpperCase())}</span> · 
-                  <span style="color:#d0d4e0">${esc(p.client)}</span> · 
+                  <span style="color:#9097ab">${esc(p.client)}</span> · 
                   <span style="color:#85B7EB">${esc(getInit(p.mainPerson))}</span>
+                  <span class="pr-type ${p.type === 'project' ? 'type-proj' : 'type-inq'}" style="margin-left: 10px; vertical-align: middle;">${p.type === "project" ? "PROJ" : "INQ"}</span>
                 </div>
               </div>
-              <div class="pr-right">
-                <div class="pr-pct" style="color:${color}">${p.pctAvg}%</div>
-                <div class="pr-type ${p.type === 'project' ? 'type-proj' : 'type-inq'}">${p.type === "project" ? "PROJ" : "INQ"}</div>
+              <div class="pr-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                <div class="pr-pct" style="color:${color}; font-size: 36px; font-weight: 800;">${p.pctAvg}%</div>
               </div>
             </div>
-            <div class="pr-bar" style="height:8px; margin-bottom:12px;"><div class="pr-fill" style="width:${p.pctAvg}%;background:${color}; box-shadow: 0 0 10px ${color}88"></div></div>
-            <div class="pr-stages">
+            <div class="pr-bar" style="height:10px; margin-bottom:16px; background: #1a1f2e;"><div class="pr-fill" style="width:${p.pctAvg}%;background:${color}; box-shadow: 0 0 15px ${color}66"></div></div>
+            <div class="pr-stages" style="gap: 12px;">
               ${stagesHtml}
             </div>
           </div>`;
