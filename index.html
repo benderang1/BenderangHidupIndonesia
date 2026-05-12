@@ -116,7 +116,7 @@
     #main-nav {
       position: absolute;
       top: 0;
-      z-index: 500;
+      z-index: 0;
     }
 
     #login-overlay {
@@ -3932,10 +3932,10 @@
       }).join("");
     }
     function buildWAMsg(e) {
-      const tasks = projects.flatMap(p => p.tasks.map(t => ({ ...t, proj: p.name }))).filter(t => t.person === e.name && t.pct < 100);
+      const tasks = projects.flatMap(p => p.tasks.map(t => ({ ...t, proj: p.name, client: p.client }))).filter(t => t.person === e.name && t.pct < 100);
       if (!tasks.length) return `Halo ${e.name}, semua task selesai. Terima kasih!`;
       let msg = `Halo ${e.name}, update task:\n\n`;
-      tasks.forEach(t => { const dl = fmtDeadline(t.extDeadline || t.deadline); msg += `• [${t.proj}] ${t.name}\n  Progress: ${t.pct}% | DL: ${dl}\n\n`; });
+      tasks.forEach(t => { const dl = fmtDeadline(t.extDeadline || t.deadline); msg += `• [${t.client.toUpperCase()}] - [${t.proj}]: ${t.name}\n  Progress: ${t.pct}% | DL: ${dl}\n\n`; });
       return msg + "Mohon update di dashboard.\n\n— Benderang";
     }
     function previewWA(i) { document.getElementById("wa-preview").textContent = buildWAMsg(employees[i]); }
@@ -4630,6 +4630,7 @@
         const t = {
           id: typeof tid === "number" ? tid : ++nTaskId, name: taskName,
           person: row["PIC"] || row["person"] || (employees[0] ? employees[0].name : ""),
+          client: row["Client"],
           deadline: row["Deadline Awal"] || row["deadline"] || "",
           extDeadline: row["Deadline Diperpanjang"] || row["extDeadline"] || null,
           pct: parseInt(row["Progress (%)"] || row["pct"] || 0) || 0,
