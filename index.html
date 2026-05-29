@@ -13,14 +13,14 @@
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyB2c7cgJ1Cssf5XQN2k7G9u0ZiuApr6zoI",
-      authDomain: "benderang-hidup-indonesia.firebaseapp.com",
-      databaseURL: "https://benderang-hidup-indonesia-default-rtdb.firebaseio.com",
-      projectId: "benderang-hidup-indonesia",
-      storageBucket: "benderang-hidup-indonesia.firebasestorage.app",
-      messagingSenderId: "377632554783",
-      appId: "1:377632554783:web:7b2309902894289cdefa2a",
-      measurementId: "G-PWRFET8MXV"
+      apiKey: "AIzaSyCj2YB0LJNzX0Y4ai1OliBM1LPdBKmYLqs",
+      authDomain: "benderang-hidup-dashboard.firebaseapp.com",
+      databaseURL: "https://benderang-hidup-dashboard-default-rtdb.firebaseio.com",
+      projectId: "benderang-hidup-dashboard",
+      storageBucket: "benderang-hidup-dashboard.firebasestorage.app",
+      messagingSenderId: "239797079926",
+      appId: "1:239797079926:web:8798e99b0510c3d1a9f457",
+      measurementId: "G-CD6ZHKM4B4"
     };
 
     // Initialize Firebase
@@ -46,6 +46,63 @@
       }
     });
   </script>
+
+  <!-- Gemini AI Module Integration -->
+  <script type="module">
+    import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+
+    const API_KEY = "AIzaSyBjTVD_ld7_ly4zAJRWGnX1fOdZvL0sSpg";
+    const genAI = new GoogleGenerativeAI(API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    window.geminiModel = model;
+
+    window.initGeminiModel = function(apiKey) {
+      try {
+        const key = apiKey || API_KEY;
+        const localGenAI = new GoogleGenerativeAI(key);
+        window.geminiModel = localGenAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        console.log("Gemini model initialized/updated successfully");
+      } catch (e) {
+        console.error("Error initializing Gemini model:", e);
+      }
+    };
+
+    // Load saved key from localStorage if it exists on load
+    try {
+      const raw = localStorage.getItem("bhi_state_v6");
+      if (raw) {
+        const s = JSON.parse(raw);
+        if (s && s.geminiApiKey && s.geminiApiKey.startsWith("AIzaSyBjTVD")) {
+          window.initGeminiModel(s.geminiApiKey);
+        }
+      }
+    } catch (e) {
+      console.error("Error loading Gemini key from localStorage:", e);
+    }
+
+    window.testAI = async function(btn) {
+      const spinner = btn ? btn.querySelector(".lh-spinner") : null;
+      if (spinner) spinner.classList.remove("hidden");
+      if (btn) btn.disabled = true;
+
+      try {
+        const activeModel = window.geminiModel || model;
+        const result = await activeModel.generateContent("Buat narasi laporan harian profesional");
+        const response = await result.response;
+        const text = response.text();
+        console.log(text);
+        alert(text);
+      } catch (err) {
+        console.error(err);
+        alert("Koneksi Gemini Gagal!\n\nError: " + err.message);
+      } finally {
+        if (spinner) spinner.classList.add("hidden");
+        if (btn) btn.disabled = false;
+      }
+    };
+  </script>
+
   <style>
     /* SHARED STYLES FROM style.css */
     * {
@@ -1972,15 +2029,21 @@
   <!-- ADD TASK MODAL -->
   <div class="modal-bg hidden" id="add-task-modal">
     <div class="modal-box">
-      <div class="modal-title">Tambah Task</div>
+      <div class="modal-title" id="at-modal-title">Tambah Task</div>
       <input type="hidden" id="at-proj-id">
       <div class="form-row"><label>Task</label><input class="fi-light" id="at-name" placeholder="Nama task"></div>
       <div class="form-row"><label>PIC</label><select class="fi-light" id="at-person"></select></div>
       <div class="form-row"><label>Stage</label><select class="fi-light" id="at-stage"></select></div>
-      <div class="form-row"><label>Deadline</label><input type="date" class="fi-light" id="at-deadline"></div>
+      <div class="form-row" id="at-deadline-row"><label>Deadline</label><input type="date" class="fi-light" id="at-deadline"></div>
+      <div class="form-row" style="margin-top:6px;padding:10px;background:#0b3320;border:1px solid #1D9E7544;border-radius:8px;" id="at-completed-row">
+        <input type="checkbox" id="at-completed" style="width:auto;accent-color:#1D9E75;cursor:pointer;" onchange="toggleCompletedMode()">
+        <label for="at-completed" style="color:#5DCAA5;font-weight:600;cursor:pointer;min-width:auto;">✓ Tandai Selesai (100%)</label>
+        <label style="margin-left:12px;">Tanggal Selesai</label>
+        <input type="date" class="fi-light" id="at-completed-date" style="max-width:180px;">
+      </div>
       <div class="modal-err" id="at-err"></div>
       <div class="modal-row">
-        <button class="btn-ok" onclick="doAddTask()">Tambah Task</button>
+        <button class="btn-ok" id="at-submit-btn" onclick="doAddTask()">Tambah Task</button>
         <button class="btn-cancel" onclick="closeModal('add-task-modal')">Batal</button>
       </div>
     </div>
@@ -2009,6 +2072,19 @@
     </div>
   </div>
 
+  <!-- MODAL PREVIEW NARASI KLIEN (COMMUNICATOR) -->
+  <div class="modal-bg hidden" id="preview-narasi-modal">
+    <div class="modal-box" style="width: 750px; max-width: 95vw; background: rgba(15, 18, 24, 0.95); border: 1px solid #1a1f2e; border-radius: 16px; padding: 28px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); backdrop-filter: blur(20px);">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1f2e; padding-bottom: 14px; margin-bottom: 20px;">
+        <span class="modal-title" style="margin-bottom: 0; color: #5DCAA5; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;">👁️ Preview Narasi Siap Kirim</span>
+        <button class="btn-cancel" onclick="closePreviewNarasi()" style="margin-bottom: 0; padding: 6px 12px; font-size: 13px; font-weight: 600; border-radius: 6px; background: rgba(226, 75, 74, 0.1); color: #E24B4A; border: 1px solid rgba(226, 75, 74, 0.2); cursor: pointer;">Tutup</button>
+      </div>
+      <div id="preview-narasi-body" style="display: flex; flex-direction: column; gap: 20px; max-height: 60vh; overflow-y: auto; padding-right: 8px;">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+  </div>
+
   <!-- SESSION BAR -->
   <div id="session-bar" class="hidden">
     <div>
@@ -2025,6 +2101,9 @@
     <button class="nb active" onclick="showPage('tv',this)" id="nav-tv">📺 TV Dashboard</button>
     <button class="nb" onclick="showPage('update',this)" id="nav-update">✏ Update Progress</button>
     <button class="nb" onclick="showPage('user-log',this)" id="nav-user-log">📋 Riwayat</button>
+    <button class="nb hidden" onclick="showPage('laporan-harian',this)" id="nav-laporan-harian">📝 Laporan Harian</button>
+    <button class="nb" onclick="showPage('daily-tracker',this)" id="nav-daily-tracker">&#128197; Daily Tracker</button>
+    <button class="nb admin-tab" onclick="showPage('narasi-klien',this)" id="nav-narasi-klien">🤖 Narasi Klien</button>
     <button class="nb admin-tab" onclick="showPage('adm-project',this)" id="nav-adm-project">Project & Inquiry</button>
     <button class="nb admin-tab" onclick="showPage('adm-employee',this)" id="nav-adm-employee">Karyawan & PIN</button>
     <button class="nb admin-tab" onclick="showPage('adm-wa',this)" id="nav-adm-wa">Notifikasi WA</button>
@@ -2057,9 +2136,10 @@
           </div>
         </div>
         <div class="priority-grid" id="priority-grid"></div>
-        <div class="prog-container">
-          <div class="prog-label">Progress — semua project & inquiry (on progress & belum selesai)</div>
-          <div class="prog-grid" id="prog-grid"></div>
+        <!-- Progress Overall Container (Full Width) -->
+        <div class="prog-container" style="margin-top: 12px; border-top: none; display: flex; flex-direction: column; overflow: hidden; flex: 1;">
+          <div class="prog-label">Progress Overall — Tahapan Aktif Project & Inquiry</div>
+          <div class="prog-grid" id="prog-grid" style="flex: 1; overflow-y: auto; padding-right: 8px;"></div>
         </div>
         <div class="tv-footer">
           <div class="footer-note" id="footer-note">Dashboard aktif</div>
@@ -2264,6 +2344,7 @@
                 <th>No. WA</th>
                 <th>PIN</th>
                 <th>Task Aktif</th>
+                <th>Peran Tambahan</th>
                 <th>Aksi</th>
               </tr>
             </thead>
@@ -2287,6 +2368,8 @@
         </div>
         <div class="form-row"><label>API Token</label><input class="fi-light" id="wa-token"
             placeholder="Token dari fonnte.com"></div>
+        <div class="form-row" style="margin-top:10px;"><label>Target Grup WA (Communicator)</label><input class="fi-light" id="wa-group-target"
+            placeholder="ID Grup WA (misal: 120363023456789@g.us atau nomor)"></div>
         <div class="form-row" style="margin-top:10px;">
           <input type="checkbox" id="wa-auto-send" style="width:auto;margin-right:8px;" onchange="toggleAutoWA()">
           <label for="wa-auto-send" style="font-size:14px;color:#d0d4e0;cursor:pointer;">Kirim pengingat otomatis setiap
@@ -2476,18 +2559,23 @@
         <div
           style="background:#0a1220;border:1px solid #1a3a6e;border-radius:7px;padding:10px 14px;margin-bottom:10px;font-size:14px;color:#85B7EB;line-height:1.8">
           <strong style="color:#d0d4e0">Setup Google Sheets (lakukan sekali):</strong><br>
-          1. Buka <a href="https://script.google.com" target="_blank" style="color:#5DCAA5">script.google.com</a> → New
-          Project → paste kode Apps Script (lihat panduan) → ganti ID spreadsheet<br>
+          1. Buka <a href="https://script.google.com" target="_blank" style="color:#5DCAA5">script.google.com</a> → New Project → paste kode Apps Script → ganti ID spreadsheet<br>
           2. Deploy → New Deployment → Web App → Execute as: Me → Who has access: Anyone<br>
-          3. Copy URL → paste di kolom Script URL di bawah → klik Simpan
+          3. Copy Web App URL hasil Deploy → paste di **Script URL** di bawah<br>
+          4. Copy URL Google Spreadsheet Anda → paste di **Spreadsheet URL** di bawah → klik Simpan
         </div>
         <div class="form-row">
-          <label>Script URL</label>
+          <label style="min-width:120px">Script URL</label>
           <input class="fi-light" id="sheets-url" placeholder="https://script.google.com/macros/s/...exec">
         </div>
-        <div class="form-row">
+        <div class="form-row" style="margin-top:8px;">
+          <label style="min-width:120px">Spreadsheet URL</label>
+          <input class="fi-light" id="spreadsheet-url" placeholder="https://docs.google.com/spreadsheets/d/...">
+        </div>
+        <div class="form-row" style="margin-top:12px;">
           <button class="btn-add" onclick="saveSheets()">Simpan</button>
           <button class="btn-blue" onclick="testSheets()">Test koneksi</button>
+          <button class="btn-blue" style="background:#4285F4; color:#fff;" onclick="if(spreadsheetUrl) window.open(spreadsheetUrl, '_blank'); else alert('Isi Spreadsheet URL terlebih dahulu dan klik Simpan.');">Buka Spreadsheet ↗</button>
           <span id="sheets-msg" style="font-size:14px;margin-left:8px"></span>
         </div>
         <div id="sheets-queue-info" style="font-size:13px;color:#555e7a;margin-top:6px"></div>
@@ -2562,7 +2650,147 @@
     </div>
   </div>
 
+  <!-- TAB DAILY TRACKER -->
+  <div class="page" id="page-daily-tracker">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; padding-bottom: 80px;">
+      
+      <!-- HEADER CARD -->
+      <div style="background: rgba(15, 18, 24, 0.7); border: 1px solid #1a1f2e; border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);">
+        <div>
+          <h2 style="font-size: 24px; font-weight: 600; color: #fff; margin-bottom: 6px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+            <span>&#128197; Daily Tracker</span>
+          </h2>
+          <p style="font-size: 14px; color: #555e7a; margin: 0;">
+            Kelola tahapan aktif pekerjaan, pantau progress, dan input kendala harian.
+          </p>
+          <div style="margin-top: 8px; font-size: 15px; color: #555e7a;">
+            Tanggal: <input type="date" id="dt-date-input" style="background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #5DCAA5; font-weight: 600; border-radius: 6px; padding: 4px 8px; font-size: 14px; outline: none;" onchange="updateTrackerDate(this.value)">
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-add" style="background: #1D9E75;" onclick="saveDailyTrackerData()">&#128190; Simpan Tracker</button>
+        </div>
+      </div>
 
+      <!-- MAIN LAYOUT: ACTIVE JOBS LIST -->
+      <div id="dt-jobs-container" style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Dynamic active jobs list loaded here -->
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- TAB LAPORAN HARIAN -->
+  <div class="page" id="page-laporan-harian">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; padding-bottom: 80px;">
+      
+      <!-- HEADER CARD -->
+      <div style="background: rgba(15, 18, 24, 0.7); border: 1px solid #1a1f2e; border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);">
+        <div>
+          <h2 style="font-size: 24px; font-weight: 600; color: #fff; margin-bottom: 6px; letter-spacing: 0.5px;">📝 Laporan Harian</h2>
+          <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+            <span style="font-size: 15px; color: #555e7a;">Hari ini: <strong style="color: #5DCAA5;" id="lh-date-display">-</strong></span>
+            <span style="font-size: 15px; color: #555e7a;">Daily Tracker: <strong style="color: #85B7EB;" id="lh-tracker-display">-</strong></span>
+            <span id="lh-status-badge" style="font-size: 13px; padding: 4px 10px; border-radius: 20px; font-weight: 600; text-transform: uppercase;"></span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="lh-action-buttons">
+          <button class="btn-add" style="background: #1D9E75;" onclick="saveLaporanHarian(true)">💾 Simpan Laporan</button>
+          <button class="btn-blue" style="background: #185FA5;" onclick="kirimKeCommunicator()">🚀 Kirim ke Communicator</button>
+          <button class="btn-add admin-tab hidden" style="background: #EF9F27; color: #fff;" id="btn-lh-export" onclick="exportLaporanToSheets()">📊 Export ke Google Sheets</button>
+          <button class="btn-warn admin-tab hidden" id="btn-lh-archive" onclick="arsipkanLaporanHarian()">📦 Arsipkan ke Riwayat</button>
+        </div>
+      </div>
+
+      <!-- COLLAPSIBLE AI SETTINGS CARD -->
+      <div style="background: rgba(15, 18, 24, 0.5); border: 1px solid #1a1f2e; border-radius: 12px; padding: 14px 18px; backdrop-filter: blur(5px);">
+        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleLHAISettings()">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px;">✨</span>
+            <span style="font-size: 14px; font-weight: 600; color: #5DCAA5; letter-spacing: 0.5px; text-transform: uppercase;">Pengaturan Gemini AI Narrative</span>
+          </div>
+          <span style="font-size: 12px; color: #555e7a;" id="lh-ai-toggle-icon">▼ Expand</span>
+        </div>
+        <div id="lh-ai-settings-content" class="hidden" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid #1a1f2e;">
+          <p style="font-size: 13px; color: #555e7a; margin-bottom: 12px; line-height: 1.6;">
+            Masukkan API Key Gemini untuk mengaktifkan pembuat narasi laporan otomatis. API Key Anda disimpan aman secara lokal dan tersinkronisasi di database Anda.
+          </p>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px;">
+              <input type="password" class="fi-light" id="lh-gemini-key" placeholder="Masukkan API Key Gemini (AIzaSy...)" style="margin-bottom: 0;">
+            </div>
+            <button class="btn-add" style="background: #1D9E75;" onclick="saveLHAiKey()">Simpan Key</button>
+            <button class="btn-blue" style="background: #185FA5; display: flex; align-items: center; gap: 6px;" onclick="testAI(this)">
+              <span class="lh-spinner hidden" style="width: 12px; height: 12px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; display: inline-block; animation: lh-spin 0.8s linear infinite;"></span>
+              <span>⚡ TEST GEMINI</span>
+            </button>
+            <span id="lh-ai-key-msg" style="font-size: 13px; margin-left: 6px;"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN REPORT BODY CONTAINER -->
+      <div id="lh-report-container" style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Dynamic project rows loaded via JavaScript -->
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- TAB NARASI KLIEN (COMMUNICATOR) -->
+  <div class="page" id="page-narasi-klien">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; padding-bottom: 80px;">
+      
+      <!-- HEADER CARD -->
+      <div style="background: rgba(15, 18, 24, 0.7); border: 1px solid #1a1f2e; border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);">
+        <div>
+          <h2 style="font-size: 24px; font-weight: 600; color: #fff; margin-bottom: 6px; letter-spacing: 0.5px;">🤖 Narasi Klien</h2>
+          <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+            <span style="font-size: 15px; color: #555e7a;">Tanggal: <strong style="color: #5DCAA5;" id="nk-date-display">-</strong></span>
+            <span style="font-size: 15px; color: #555e7a;">Communicator: <strong style="color: #85B7EB;" id="nk-communicator-display">-</strong></span>
+            <span style="font-size: 15px; color: #555e7a; display: flex; align-items: center; gap: 6px;">
+              Status Laporan: 
+              <select id="nk-report-status" onchange="updateNKReportStatus(this.value)" style="background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #fff; border-radius: 6px; padding: 4px 8px; font-size: 13px; font-weight: 600; cursor: pointer; outline: none;">
+                <option value="Menunggu">⏳ Menunggu</option>
+                <option value="Sedang ditulis">✏️ Sedang ditulis</option>
+                <option value="Menunggu Approval">⏳ Menunggu Approval</option>
+                <option value="Siap kirim">✅ Siap kirim</option>
+                <option value="Disetujui">❇️ Disetujui</option>
+              </select>
+            </span>
+            <span style="font-size: 15px; color: #555e7a; display: flex; align-items: center; gap: 6px;">
+              Pilih Management: 
+              <select id="nk-management-select" onchange="updateNKManagement(this.value)" style="background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #fff; border-radius: 6px; padding: 4px 8px; font-size: 13px; font-weight: 600; cursor: pointer; outline: none;">
+                <!-- dynamic options populated by populateNKManagementSelect -->
+              </select>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN NARRATIVE BODY CONTAINER -->
+      <div id="nk-report-container" style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Dynamic project rows loaded via JavaScript -->
+      </div>
+      
+      <!-- BOTTOM ACTIONS BAR -->
+      <div style="background: rgba(15, 18, 24, 0.7); border: 1px solid #1a1f2e; border-radius: 16px; padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; backdrop-filter: blur(10px); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);">
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="btn-blue" style="background: #185FA5; display: flex; align-items: center; gap: 8px;" onclick="generateAllProjectNarratives()">
+            <span class="lh-spinner hidden" id="nk-batch-spinner" style="width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; display: inline-block; animation: lh-spin 0.8s linear infinite;"></span>
+            <span>🤖 Generate Semua Narasi</span>
+          </button>
+          <button class="btn-blue" style="background: #e5c158; color: #000; font-weight: 700;" onclick="previewAllNarratives()">👁 Preview</button>
+          <button class="btn-blue" style="background: #25D366; color: #fff; font-weight: 700;" onclick="mintaApprovalWA()">📱 Minta Approval WA</button>
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="btn-add" style="background: #1D9E75;" id="btn-nk-export" onclick="exportLaporanToSheets()">📊 Export ke Google Sheets</button>
+          <button class="btn-warn" id="btn-nk-archive" onclick="arsipkanLaporanHarian()">📦 Arsipkan ke Riwayat</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
   <script>
     /* ============================================================
@@ -2578,6 +2806,20 @@
 
     const DAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
     const MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+    let currentTrackerDateStr = null;
+    function getTrackerDate() {
+      if (!currentTrackerDateStr) currentTrackerDateStr = todayStr();
+      return currentTrackerDateStr;
+    }
+    function updateTrackerDate(val) {
+      if (!val) {
+        currentTrackerDateStr = todayStr();
+      } else {
+        currentTrackerDateStr = val;
+      }
+      if (typeof renderDailyTracker === 'function') renderDailyTracker();
+    }
 
     // ============ DELAY REASON OPTIONS ============
     const DELAY_REASONS = [
@@ -2619,6 +2861,21 @@
     // ============ HELPERS ============
     function addDays(n) { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
     function todayStr() { return addDays(0); }
+    function matchesDate(completedAtStr, targetYmd) {
+      if (!completedAtStr || !targetYmd) return false;
+      const parts = targetYmd.split("-");
+      if (parts.length !== 3) return false;
+      const y = parts[0];
+      const m = parseInt(parts[1], 10).toString();
+      const d = parseInt(parts[2], 10).toString();
+      const datePart = completedAtStr.split(",")[0].trim();
+      const cParts = datePart.split(/[-/.]/);
+      if (cParts.length !== 3) return false;
+      const cy = cParts[2];
+      const cm = parseInt(cParts[1], 10).toString();
+      const cd = parseInt(cParts[0], 10).toString();
+      return cy === y && cm === m && cd === d;
+    }
     function pad(n) { return String(n).padStart(2, "0"); }
     function diffDays(dStr) { if (!dStr) return null; const d = new Date(dStr); d.setHours(0, 0, 0, 0); const t = new Date(); t.setHours(0, 0, 0, 0); return Math.round((d - t) / (1000 * 60 * 60 * 24)); }
     function fmtDeadline(dStr) {
@@ -2641,6 +2898,45 @@
 
     function esc(s) { return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 
+    function getIncludedDates(dateObj) {
+      const dates = [];
+      let current = new Date(dateObj);
+      dates.push(new Date(current));
+      while (true) {
+        current.setDate(current.getDate() - 1);
+        const day = current.getDay();
+        if (day === 2 || day === 4) {
+          break;
+        }
+        dates.push(new Date(current));
+      }
+      return dates;
+    }
+
+    function cleanAndValidateNarrative(text) {
+      if (!text) return "";
+      const forbiddenPatterns = [
+        /health\s*proyek/gi,
+        /kondisi\s*proyek/gi,
+        /on\s*track/gi,
+        /at\s*risk/gi,
+        /behind/gi,
+        /[🟢🟡🔴]/g
+      ];
+      let corrected = text;
+      forbiddenPatterns.forEach(pattern => {
+        corrected = corrected.replace(pattern, "");
+      });
+      corrected = corrected.replace(/[ \t]+/g, ' ').replace(/\s*\n\s*/g, '\n').replace(/\n\s*\n/g, '\n').trim();
+      const passed = !forbiddenPatterns.some(pattern => pattern.test(corrected));
+      if (!passed) {
+        console.warn("Narrative cleaning test failed! Text still contains forbidden patterns.");
+      } else {
+        console.log("Narrative cleaning test passed successfully.");
+      }
+      return corrected;
+    }
+
     // ============ PERSISTENT STORAGE ============
     const STORAGE_KEY = "bhi_state_v6";
 
@@ -2661,7 +2957,9 @@
         if (s.projects && s.projects.length) projects = s.projects;
         if (s.updateLog) updateLog = s.updateLog;
         if (s.sheetsUrl) sheetsUrl = s.sheetsUrl;
+        if (s.spreadsheetUrl) spreadsheetUrl = s.spreadsheetUrl;
         if (s.waToken) waToken = s.waToken;
+        if (s.waGroupTarget !== undefined) waGroupTarget = s.waGroupTarget;
         if (s.nProjId) nProjId = s.nProjId;
         if (s.nTaskId) nTaskId = s.nTaskId;
         if (s.autoSendWA) autoSendWA = s.autoSendWA;
@@ -2673,6 +2971,15 @@
           gdriveVision = s.gdrive.vis || "";
         }
         if (s.pins) localStorage.setItem("bhi_pins_v5", JSON.stringify(s.pins));
+        if (s.laporanHarian) laporanHarian = s.laporanHarian;
+        if (s.geminiApiKey && s.geminiApiKey.startsWith("AIzaSyBjTVD")) {
+          geminiApiKey = s.geminiApiKey;
+        } else {
+          geminiApiKey = DEFAULT_GEMINI_KEY;
+        }
+        if (typeof window.initGeminiModel === 'function') {
+          window.initGeminiModel(geminiApiKey);
+        }
 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
         refreshUI();
@@ -2689,15 +2996,20 @@
       if (typeof renderLog === 'function') renderLog();
       if (typeof renderUserLog === 'function') renderUserLog();
       if (typeof renderArchiveList === 'function') renderArchiveList();
+      if (typeof renderLaporanHarian === 'function') renderLaporanHarian();
+      if (typeof renderDailyTracker === 'function') renderDailyTracker();
     }
 
     function saveState() {
       if (isSyncing) return;
       const state = {
-        employees, projects, updateLog, sheetsUrl, waToken, nProjId, nTaskId,
+        employees, projects, updateLog, sheetsUrl, waToken, waGroupTarget, nProjId, nTaskId,
         autoSendWA, lastAutoSendDate, dashDur: DASH_DUR, photoDur: PHOTO_DUR,
         gdrive: { ann: (typeof gdrivePengumuman !== "undefined" ? gdrivePengumuman : ""), vis: (typeof gdriveVision !== "undefined" ? gdriveVision : "") },
-        pins: getPins()
+        pins: getPins(),
+        laporanHarian,
+        geminiApiKey,
+        spreadsheetUrl
       };
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -2712,11 +3024,11 @@
 
     // ============ DEFAULT STATE ============
     let employees = [
-      { name: "Reza Firmansyah", init: "RF", wa: "628111222333" },
-      { name: "Sari Indrawati", init: "SI", wa: "628222333444" },
-      { name: "Doni Prasetyo", init: "DP", wa: "628333444555" },
-      { name: "Mega Wulandari", init: "MW", wa: "628444555666" },
-      { name: "Bayu Nugroho", init: "BN", wa: "628555666777" }
+      { name: "Reza Firmansyah", init: "RF", wa: "628111222333", role: "" },
+      { name: "Sari Indrawati", init: "SI", wa: "628222333444", role: "" },
+      { name: "Doni Prasetyo", init: "DP", wa: "628333444555", role: "" },
+      { name: "Mega Wulandari", init: "MW", wa: "628444555666", role: "" },
+      { name: "Bayu Nugroho", init: "BN", wa: "628555666777", role: "" }
     ];
 
     let nProjId = 10, nTaskId = 100;
@@ -2827,7 +3139,12 @@
       { time: "17/04/2025, 13.00.00", updatedBy: "Sari Indrawati", person: "Sari Indrawati", projId: 5, project: "IIoT Monitoring Line Produksi PT Prima Food", taskId: 52, task: "Setup gateway & protokol Modbus", before: 0, after: 20, isLate: false, reason: "", status: "Update", deadlineProject: "", deadlineTask: addDays(9) }
     ];
     let sheetsUrl = "";
+    let spreadsheetUrl = "";
+    let laporanHarian = {};
+    const DEFAULT_GEMINI_KEY = "AIzaSyBjTVD_ld7_ly4zAJRWGnX1fOdZvL0sSpg";
+    let geminiApiKey = DEFAULT_GEMINI_KEY;
     let waToken = "gRJJcDgsrMaV6ZVkd71h";
+    let waGroupTarget = "";
     let gdrivePengumuman = "https://script.google.com/macros/s/AKfycbyP3A4rLcvdluNiri4wOrGrjydSWkUBKllYuFW_gd0oK-DXgfNp09lqXSJbmGaZrP1LhQ/exec";
     let gdriveVision = "https://script.google.com/macros/s/AKfycbyP3A4rLcvdluNiri4wOrGrjydSWkUBKllYuFW_gd0oK-DXgfNp09lqXSJbmGaZrP1LhQ/exec?folder=vision";
     let autoSendWA = false;
@@ -2841,7 +3158,9 @@
         if (s.projects && s.projects.length) projects = s.projects;
         if (s.updateLog) updateLog = s.updateLog;
         if (s.sheetsUrl) sheetsUrl = s.sheetsUrl;
+        if (s.spreadsheetUrl) spreadsheetUrl = s.spreadsheetUrl;
         if (s.waToken) waToken = s.waToken;
+        if (s.waGroupTarget !== undefined) waGroupTarget = s.waGroupTarget;
         if (s.nProjId) nProjId = s.nProjId;
         if (s.nTaskId) nTaskId = s.nTaskId;
         if (s.autoSendWA) autoSendWA = s.autoSendWA;
@@ -2851,6 +3170,12 @@
         if (s.gdrive) {
           gdrivePengumuman = s.gdrive.ann || "";
           gdriveVision = s.gdrive.vis || "";
+        }
+        if (s.laporanHarian) laporanHarian = s.laporanHarian;
+        if (s.geminiApiKey && s.geminiApiKey.startsWith("AIzaSyBjTVD")) {
+          geminiApiKey = s.geminiApiKey;
+        } else {
+          geminiApiKey = DEFAULT_GEMINI_KEY;
         }
       }
     }
@@ -2932,7 +3257,7 @@
         p.tasks.forEach(t => {
           if (t.pct >= 100) return;
           const d = diffDays(t.extDeadline || t.deadline);
-          const obj = { proj: p.name, task: t.name, person: t.person, deadline: t.extDeadline || t.deadline, d, priority: p.priority || 1 };
+          const obj = { proj: p.name, client: p.client || "", task: t.name, person: t.person, deadline: t.extDeadline || t.deadline, d, priority: p.priority || 1 };
           if (d === null) return;
           if (d < 0) overdue.push(obj);
           else if (d === 0) todayT.push(obj);
@@ -3033,7 +3358,7 @@
     // ============ SHEETS ============
     function pushToSheets(entry) {
       if (!sheetsUrl) return;
-      fetch(sheetsUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(entry) }).catch(() => { });
+      fetch(sheetsUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(entry) }).catch(() => { });
     }
 
     /* ============================================================
@@ -3134,10 +3459,24 @@
       document.getElementById("session-bar").classList.remove("hidden");
       document.getElementById("session-name").textContent = currentUser;
 
+      const currentEmp = employees.find(e => e.name === currentUser);
+      const isDailyTrackerRole = currentEmp && currentEmp.role === "Daily Tracker";
+      const isCommunicatorRole = currentEmp && currentEmp.role === "Communicator";
+      const isManagementRole = currentEmp && currentEmp.role === "Management";
+
       const roleLabel = document.getElementById("session-role-label");
       if (isAdmin) {
         roleLabel.textContent = "⚙ ADMIN";
         roleLabel.style.color = "#EF9F27";
+      } else if (isDailyTrackerRole) {
+        roleLabel.textContent = "👤 KARYAWAN (Daily Tracker)";
+        roleLabel.style.color = "#5DCAA5";
+      } else if (isCommunicatorRole) {
+        roleLabel.textContent = "👤 KARYAWAN (Communicator)";
+        roleLabel.style.color = "#85B7EB";
+      } else if (isManagementRole) {
+        roleLabel.textContent = "💼 KARYAWAN (Management)";
+        roleLabel.style.color = "#378ADD";
       } else {
         roleLabel.textContent = "👤 KARYAWAN";
         roleLabel.style.color = "#5DCAA5";
@@ -3145,7 +3484,19 @@
 
       // Show/hide admin tabs
       const adminTabs = document.querySelectorAll(".admin-tab");
-      adminTabs.forEach(t => t.classList.toggle("hidden", !isAdmin));
+      adminTabs.forEach(t => {
+        if (t.id === "nav-narasi-klien") {
+          t.classList.toggle("hidden", !isAdmin && !isCommunicatorRole && !isManagementRole);
+        } else {
+          t.classList.toggle("hidden", !isAdmin);
+        }
+      });
+
+      // Laporan Harian tab visibility
+      const navLaporan = document.getElementById("nav-laporan-harian");
+      if (navLaporan) {
+        navLaporan.classList.toggle("hidden", !isAdmin && !isDailyTrackerRole);
+      }
 
       initUnifiedUI();
     }
@@ -3182,6 +3533,7 @@
         if (gdrivePengumuman) document.getElementById("gdrive-ann").value = gdrivePengumuman;
         if (gdriveVision) document.getElementById("gdrive-vis").value = gdriveVision;
         if (sheetsUrl) document.getElementById("sheets-url").value = sheetsUrl;
+        if (spreadsheetUrl) document.getElementById("spreadsheet-url").value = spreadsheetUrl;
         if (waToken) document.getElementById("wa-token").value = waToken;
       }
     }
@@ -3200,11 +3552,14 @@
       if (el) el.classList.add("active");
 
       if (id === "tv") renderDashboard();
+      if (id === "daily-tracker") renderDailyTracker();
       if (id === "update") {
         if (isAdmin) { document.getElementById("adm-person-selector").style.display = "block"; populateAdmUpdSelect(); }
         else { document.getElementById("adm-person-selector").style.display = "none"; loadTasksForPerson(currentUser); }
       }
       if (id === "user-log") renderUserLog();
+      if (id === "laporan-harian") renderLaporanHarian();
+      if (id === "narasi-klien") renderNarasiKlien();
       if (id === "adm-project") { renderProjectList(); populatePICSelect("np-person"); }
       if (id === "adm-employee") renderEmpTable();
       if (id === "adm-wa") renderWAPanel();
@@ -3237,7 +3592,7 @@
             <div class="task-item" style="margin-bottom: 8px;">
               <div class="dot ${dotCls}"></div>
               <div style="flex:1; min-width:0; display:flex; align-items:center; gap:8px;">
-                <span style="color:#EF9F27; font-size:11px; font-weight:800; text-transform:uppercase; width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0;" title="${esc(x.proj)}">${esc(x.proj)}</span>
+                <span style="color:#EF9F27; font-size:11px; font-weight:800; text-transform:uppercase; width:380px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0;" title="${esc(x.proj)}${x.client ? ` (${esc(x.client)})` : ''}">${esc(x.proj)}${x.client ? ` <span style="color:#9097ab; font-size:10px; font-weight:normal; text-transform:none;">(${esc(x.client)})</span>` : ''}</span>
                 <span style="color:#3d4459; font-size:12px; font-weight:bold; flex-shrink:0;">|</span>
                 <span style="color:#c8ccd8; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;" title="${esc(x.task)}">${esc(x.task)}</span>
               </div>
@@ -3312,6 +3667,53 @@
             </div>
           </div>`;
       }).join("");
+
+      // Render Today's Updates Log
+      const todayStrID = formatDateID();
+      const todayLogs = updateLog.filter(l => isTodayLog(l.time, todayStrID));
+      
+      const countEl = document.getElementById("tv-today-updates-count");
+      if (countEl) {
+        countEl.textContent = todayLogs.length + " update";
+      }
+      
+      const listEl = document.getElementById("tv-today-updates-list");
+      if (listEl) {
+        if (todayLogs.length === 0) {
+          listEl.innerHTML = `<div style="color:#555e7a; font-size:14px; font-style:italic; text-align:center; padding: 24px 0;">Belum ada update hari ini</div>`;
+        } else {
+          listEl.innerHTML = todayLogs.map(l => {
+            const init = getInit(l.updatedBy || l.person || "â€”");
+            const lateStatus = l.isLate 
+              ? `<span style="background:#5c1a1a; color:#F09595; font-size:11px; padding:1px 5px; border-radius:3px; font-weight:600; text-transform:uppercase;">TERLAMBAT</span>`
+              : `<span style="background:#0b3320; color:#5DCAA5; font-size:11px; padding:1px 5px; border-radius:3px; font-weight:600; text-transform:uppercase;">TEPAT WAKTU</span>`;
+            const reasonText = l.isLate && l.reason ? `<div style="font-size:12px; color:#F09595; margin-top:3px; line-height:1.2;">Alasan: ${esc(l.reason)}</div>` : "";
+            return `
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid #1a1f2e; border-radius: 8px; padding: 10px; display: flex; gap: 10px; align-items: flex-start;">
+                <div style="background: #EF9F27; color: #0a0c10; font-weight: 800; font-size: 13px; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" title="${esc(l.updatedBy || l.person)}">
+                  ${esc(init)}
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 13px; font-weight: 600; color: #d0d4e0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    ${esc(l.project)}
+                  </div>
+                  <div style="font-size: 12px; color: #9097ab; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">
+                    ${esc(l.task)}
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px;">
+                    <span style="color:#555e7a;">${l.before}%</span>
+                    <span style="color:#EF9F27;">\u{279a}</span>
+                    <span style="color:#5DCAA5; font-weight: 700;">${l.after}%</span>
+                    <span style="color:#555e7a; margin: 0 1px;">|</span>
+                    ${lateStatus}
+                  </div>
+                  ${reasonText}
+                </div>
+              </div>
+            `;
+          }).join("");
+        }
+      }
     }
 
     // ============================================================
@@ -3746,6 +4148,7 @@
           <span style="font-size:13px;color:#555e7a">${pct}% selesai</span>
           <div class="pbar-sm" style="width:80px"><div class="pbar-fill" style="width:${pct}%;background:${pct >= 100 ? '#1D9E75' : pct > 50 ? '#378ADD' : '#BA7517'}"></div></div>
           <button class="btn-blue" onclick="openAddTask(${p.id})">+ Task</button>
+          <button class="btn-green-sm" onclick="openAddCompletedTask(${p.id})" style="background:#085041;color:#5DCAA5;border:1px solid #1D9E7544;">✓ + Task Selesai</button>
           <button class="btn-amber" onclick="editProjectPriority(${p.id})">Prio: ${p.priority || 1}</button>
           <button class="btn-warn" onclick="deleteProject(${p.id})">Hapus</button>
         </div>
@@ -3753,29 +4156,72 @@
       <div style="font-size:13px;color:#555e7a;margin-bottom:8px">${esc(p.client)} | Current: <strong style="color:#EF9F27">${esc(p.currentStageName)}</strong></div>
       <div style="font-size:13px;color:#EF9F27;margin-bottom:8px">🖼️ Foto Kiri: ${p.imgLeft ? `<a href="${p.imgLeft}" target="_blank" style="color:#378ADD">Link</a>` : '—'} | Foto Kanan: ${p.imgRight ? `<a href="${p.imgRight}" target="_blank" style="color:#378ADD">Link</a>` : '—'}</div>
       <button class="btn-blue" style="margin-bottom:8px" onclick="editProjectImages(${p.id})">Edit Foto</button>`;
-        if (p.tasks.length) {
+        const activeTasks = p.tasks.filter(t => t.pct < 100);
+        const completedTasks = p.tasks.filter(t => t.pct >= 100);
+        const stages = p.type === 'inquiry' ? INQUIRY_STAGES : PROJECT_STAGES;
+
+        // Render Active Tasks
+        if (activeTasks.length) {
+          h += `<h4 style="font-size:14px;color:#85B7EB;margin:10px 0 6px 0;font-weight:600">Task Aktif</h4>`;
           h += `<table class="adm-table"><thead><tr><th>Task</th><th>Stage</th><th>PIC</th><th>Deadline</th><th>Progress</th><th>Status</th><th>Aksi</th></tr></thead><tbody>`;
-          const stages = p.type === 'inquiry' ? INQUIRY_STAGES : PROJECT_STAGES;
-          p.tasks.forEach(t => {
+          activeTasks.forEach(t => {
             const stageName = stages[t.stageIdx || 0]?.name || "—";
             const diff = diffDays(t.extDeadline || t.deadline);
-            const isLate = diff !== null && diff < 0 && t.pct < 100;
+            const isLate = diff !== null && diff < 0;
             const dlStr = fmtDeadline(t.extDeadline || t.deadline);
             h += `<tr>
           <td>${esc(t.name)}</td>
           <td style="font-size:12px">${esc(stageName)}</td>
           <td>${esc(t.person)}</td>
           <td style="color:${isLate ? '#E24B4A' : diff === 0 || diff === 1 ? '#BA7517' : '#555e7a'};white-space:nowrap">${dlStr}${t.extDeadline ? '<span style="font-size:12px;color:#EF9F27;margin-left:4px">(diperpanjang)</span>' : ''}${t.lateReason ? `<div style="font-size:12px;color:#EF9F27;margin-top:3px">Alasan: ${esc(t.lateReason)}</div>` : ''}</td>
-          <td><span style="font-weight:600;color:${t.pct >= 100 ? '#5DCAA5' : '#c8ccd8'}">${t.pct}%</span></td>
-          <td>${t.pct >= 100 ? '<span class="st-done">Selesai</span>' : isLate ? '<span class="st-late">Terlambat</span>' : '<span class="st-ok">On Track</span>'}</td>
+          <td><span style="font-weight:600;color:#c8ccd8">${t.pct}%</span></td>
+          <td>${isLate ? '<span class="st-late">Terlambat</span>' : '<span class="st-ok">On Track</span>'}</td>
           <td style="display:flex;gap:4px;flex-wrap:wrap">
-            ${t.pct < 100 ? `<button class="btn-amber" onclick="openExtendDeadline(${p.id},${t.id})">Perpanjang DL</button>` : ''}
+            <button class="btn-amber" onclick="openExtendDeadline(${p.id},${t.id})">Perpanjang DL</button>
             <button class="btn-warn" onclick="deleteTask(${p.id},${t.id})">Hapus</button>
           </td>
         </tr>`;
           });
           h += `</tbody></table>`;
-        } else { h += `<p style="font-size:14px;color:#555e7a">Belum ada task.</p>`; }
+        } else { h += `<p style="font-size:14px;color:#555e7a;margin:10px 0 6px 0">Belum ada task aktif.</p>`; }
+
+        // Render Completed Tasks
+        if (completedTasks.length) {
+          h += `
+          <details style="margin-top: 12px; background: rgba(29, 158, 117, 0.05); border: 1px dashed rgba(29, 158, 117, 0.3); border-radius: 8px; padding: 10px;">
+            <summary style="font-size: 14px; font-weight: 600; color: #5DCAA5; cursor: pointer; outline: none; user-select: none;">
+              ✓ Task Selesai (${completedTasks.length})
+            </summary>
+            <table class="adm-table" style="margin-top: 8px; background: transparent;">
+              <thead>
+                <tr>
+                  <th>Task Selesai</th>
+                  <th>Stage</th>
+                  <th>PIC</th>
+                  <th>Tanggal Selesai</th>
+                  <th>Progress</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>`;
+          completedTasks.forEach(t => {
+            const stageName = stages[t.stageIdx || 0]?.name || "—";
+            const dateStr = t.completedAt ? t.completedAt.split(",")[0] : (t.deadline ? fmtDeadline(t.deadline) : "—");
+            h += `<tr>
+          <td>${esc(t.name)}</td>
+          <td style="font-size:12px">${esc(stageName)}</td>
+          <td>${esc(t.person)}</td>
+          <td style="color:#5DCAA5;white-space:nowrap">${esc(dateStr)}</td>
+          <td><span style="font-weight:600;color:#5DCAA5">${t.pct}%</span></td>
+          <td><span class="st-done">Selesai</span></td>
+          <td>
+            <button class="btn-warn" onclick="deleteTask(${p.id},${t.id})">Hapus</button>
+          </td>
+        </tr>`;
+          });
+          h += `</tbody></table></details>`;
+        }
         h += `</div>`;
       });
       el.innerHTML = h;
@@ -3819,21 +4265,44 @@
       const p = projects.find(x => x.id === projId); if (!p) return;
       document.getElementById("at-proj-id").value = projId; document.getElementById("at-name").value = "";
       document.getElementById("at-deadline").value = ""; document.getElementById("at-err").textContent = "";
+      document.getElementById("at-completed").checked = false;
+      document.getElementById("at-completed-date").value = "";
+      document.getElementById("at-modal-title").textContent = "Tambah Task";
+      document.getElementById("at-submit-btn").textContent = "Tambah Task";
+      document.getElementById("at-submit-btn").style.background = "";
+      document.getElementById("at-deadline-row").style.display = "";
       populatePICSelect("at-person");
       populateStageSelect("at-stage", p.type);
+      toggleCompletedMode();
       document.getElementById("add-task-modal").classList.remove("hidden");
     }
 
-    function doAddTask() {
-      const projId = parseInt(document.getElementById("at-proj-id").value);
-      const name = document.getElementById("at-name").value.trim();
-      const person = document.getElementById("at-person").value;
-      const stageIdx = parseInt(document.getElementById("at-stage").value) || 0;
-      const deadline = document.getElementById("at-deadline").value;
-      const p = projects.find(x => x.id === projId);
-      if (!name || !person || !deadline || !p) { document.getElementById("at-err").textContent = "Lengkapi data."; return; }
-      p.tasks.push({ id: ++nTaskId, name, person, stageIdx, deadline, pct: 0, lateReason: null, extDeadline: null });
-      saveState(); closeModal("add-task-modal"); renderProjectList();
+    function openAddCompletedTask(projId) {
+      const p = projects.find(x => x.id === projId); if (!p) return;
+      document.getElementById("at-proj-id").value = projId; document.getElementById("at-name").value = "";
+      document.getElementById("at-err").textContent = "";
+      document.getElementById("at-completed").checked = true;
+      document.getElementById("at-completed-date").value = todayStr();
+      document.getElementById("at-deadline").value = todayStr();
+      document.getElementById("at-modal-title").textContent = "Tambah Task Selesai";
+      document.getElementById("at-submit-btn").textContent = "✓ Tambah Task Selesai";
+      document.getElementById("at-submit-btn").style.background = "#085041";
+      populatePICSelect("at-person");
+      populateStageSelect("at-stage", p.type);
+      toggleCompletedMode();
+      document.getElementById("add-task-modal").classList.remove("hidden");
+    }
+
+    function toggleCompletedMode() {
+      const checked = document.getElementById("at-completed").checked;
+      const deadlineRow = document.getElementById("at-deadline-row");
+      const completedDateEl = document.getElementById("at-completed-date");
+      if (checked) {
+        deadlineRow.style.display = "none";
+        if (!completedDateEl.value) completedDateEl.value = todayStr();
+      } else {
+        deadlineRow.style.display = "";
+      }
     }
 
     function deleteTask(projId, taskId) { if (confirm("Hapus task?")) { const p = projects.find(x => x.id === projId); if (p) p.tasks = p.tasks.filter(t => t.id !== taskId); saveState(); renderProjectList(); } }
@@ -3867,10 +4336,10 @@
       const pin = document.getElementById("ne-pin").value.trim();
       const msg = document.getElementById("ne-msg");
       if (!name || !init) { msg.textContent = "Lengkapi nama/inisial."; msg.style.color = "#E24B4A"; return; }
-      employees.push({ name, init, wa: wa || "" });
+      employees.push({ name, init, wa: wa || "", role: "" });
       savePin(name, (pin && /^\d{4}$/.test(pin)) ? pin : "1234");
       saveState();
-      pushToSheetsQueued(buildEmployeeEntry({ name, init, wa: wa || "" }));
+      pushToSheetsQueued(buildEmployeeEntry({ name, init, wa: wa || "", role: "" }));
       msg.textContent = "Karyawan ditambahkan!"; msg.style.color = "#5DCAA5";
       ["ne-name", "ne-init", "ne-wa", "ne-pin"].forEach(id => document.getElementById(id).value = "");
       renderEmpTable(); renderWAPanel(); populatePICSelect("np-person"); populatePICSelect("at-person");
@@ -3886,6 +4355,14 @@
       <td style="font-family:monospace;font-size:13px">${esc(e.wa) || '—'}</td>
       <td style="font-family:monospace">${getPin(e.name)}</td>
       <td>${activeTasks} task</td>
+      <td>
+        <select onchange="updateEmpRole(${i}, this.value)" style="background: #10141d; color: #d0d4e0; border: 1px solid #1a1f2e; padding: 4px 8px; border-radius: 4px; font-size: 13px;">
+          <option value="" ${!e.role ? 'selected' : ''}>—</option>
+          <option value="Daily Tracker" ${e.role === 'Daily Tracker' ? 'selected' : ''}>Daily Tracker</option>
+          <option value="Communicator" ${e.role === 'Communicator' ? 'selected' : ''}>Communicator</option>
+          <option value="Management" ${e.role === 'Management' ? 'selected' : ''}>Management</option>
+        </select>
+      </td>
       <td style="display:flex;gap:4px;flex-wrap:wrap">
         <button class="btn-blue" onclick="editEmpWA(${i})">WA</button>
         <button class="btn-amber" onclick="resetEmpPIN(${i})">PIN</button>
@@ -3898,12 +4375,16 @@
     function editEmpWA(i) { const wa = prompt(`No WA baru ${employees[i].name}:`, employees[i].wa || ""); if (wa !== null) { employees[i].wa = wa.trim(); saveState(); renderEmpTable(); } }
     function resetEmpPIN(i) { const pin = prompt(`PIN baru (4 digit) ${employees[i].name}:`, "1234"); if (pin && /^\d{4}$/.test(pin)) { savePin(employees[i].name, pin); renderEmpTable(); } }
     function deleteEmp(i) { if (confirm(`Hapus ${employees[i].name}?`)) { employees.splice(i, 1); saveState(); renderEmpTable(); } }
+    function updateEmpRole(i, role) { employees[i].role = role; saveState(); pushToSheetsQueued(buildEmployeeEntry(employees[i])); renderEmpTable(); }
 
     // ============================================================
     // WA
     // ============================================================
     function saveWAConfig() {
       waToken = document.getElementById("wa-token").value.trim();
+      if (document.getElementById("wa-group-target")) {
+        waGroupTarget = document.getElementById("wa-group-target").value.trim();
+      }
       autoSendWA = document.getElementById("wa-auto-send").checked;
       saveState();
       document.getElementById("wa-cfg-msg").textContent = "Konfigurasi tersimpan.";
@@ -3930,6 +4411,9 @@
       const el = document.getElementById("wa-person-list"); if (!el) return;
       // Load toggle state
       document.getElementById("wa-token").value = waToken || "";
+      if (document.getElementById("wa-group-target")) {
+        document.getElementById("wa-group-target").value = waGroupTarget || "";
+      }
       document.getElementById("wa-auto-send").checked = autoSendWA;
 
       const today = todayStr();
@@ -4074,8 +4558,6 @@
 
       downloadCSV("\uFEFF" + [header, ...rows].join("\n"), `bhi_project_report_${todayStr()}.csv`);
     }
-
-    function saveSheets() { sheetsUrl = document.getElementById("sheets-url").value.trim(); saveState(); }
 
     function saveGDrive() {
       const annEl = document.getElementById("gdrive-ann");
@@ -4305,7 +4787,7 @@
     }
 
     function buildEmployeeEntry(e) {
-      return { type: "employee", name: e.name, init: e.init || "", wa: e.wa || "" };
+      return { type: "employee", name: e.name, init: e.init || "", wa: e.wa || "", role: e.role || "" };
     }
 
     function buildArchiveEntry(a) {
@@ -4452,7 +4934,9 @@
 
     // Override saveSheets to also flush queue
     function saveSheets() {
-      sheetsUrl = document.getElementById("sheets-url").value.trim(); saveState();
+      sheetsUrl = document.getElementById("sheets-url").value.trim();
+      spreadsheetUrl = document.getElementById("spreadsheet-url").value.trim();
+      saveState();
       const msg = document.getElementById("sheets-msg");
       msg.textContent = sheetsUrl ? "URL tersimpan." : "Dikosongkan."; msg.style.color = "#5DCAA5";
       if (sheetsUrl) flushSheetsQueue();
@@ -4799,18 +5283,25 @@
       setTimeout(() => { msg.textContent = ""; }, 3000); renderProjectList();
     }
 
-    // Override doAddTask to add createdAt/completedAt
+    // Override doAddTask to add createdAt/completedAt + completed mode support
     function doAddTask() {
       const projId = parseInt(document.getElementById("at-proj-id").value);
       const name = document.getElementById("at-name").value.trim();
       const person = document.getElementById("at-person").value;
       const stageIdx = parseInt(document.getElementById("at-stage").value) || 0;
-      const deadline = document.getElementById("at-deadline").value;
+      const isCompleted = document.getElementById("at-completed").checked;
+      const completedDate = document.getElementById("at-completed-date").value;
+      const deadline = isCompleted ? (completedDate || todayStr()) : document.getElementById("at-deadline").value;
       const p = projects.find(x => x.id === projId);
-      if (!name || !person || !deadline || !p) { document.getElementById("at-err").textContent = "Lengkapi data."; return; }
+      if (!name || !person || !p) { document.getElementById("at-err").textContent = "Lengkapi data."; return; }
+      if (!isCompleted && !deadline) { document.getElementById("at-err").textContent = "Lengkapi deadline."; return; }
+      if (isCompleted && !completedDate) { document.getElementById("at-err").textContent = "Isi tanggal selesai."; return; }
       const newTask = {
-        id: ++nTaskId, name, person, stageIdx, deadline, pct: 0, lateReason: null, extDeadline: null,
-        createdAt: new Date().toLocaleString("id-ID"), completedAt: null
+        id: ++nTaskId, name, person, stageIdx, deadline, 
+        pct: isCompleted ? 100 : 0, 
+        lateReason: null, extDeadline: null,
+        createdAt: new Date().toLocaleString("id-ID"), 
+        completedAt: isCompleted ? completedDate : null
       };
       p.tasks.push(newTask);
       saveState();
@@ -4867,6 +5358,1758 @@
       msg.textContent = "Reset ke default (600d dashboard, 12d foto)."; msg.style.color = "#5DCAA5";
       setTimeout(() => { msg.textContent = ""; }, 3000);
     }
+
+    // ============================================================
+    // LAPORAN HARIAN (DAILY REPORT) ENGINE
+    // ============================================================
+
+    if (!document.getElementById("lh-custom-styles")) {
+      const style = document.createElement("style");
+      style.id = "lh-custom-styles";
+      style.textContent = `
+        @keyframes lh-spin {
+          to { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    function formatDateID(date = new Date()) {
+      const d = date.getDate();
+      const m = date.getMonth() + 1;
+      const y = date.getFullYear();
+      return `${pad(d)}/${pad(m)}/${y}`;
+    }
+
+    function isTodayLog(timeStr, targetDateStr) {
+      if (!timeStr || !targetDateStr) return false;
+      const tParts = targetDateStr.split("/");
+      if (tParts.length !== 3) return false;
+      const tD = parseInt(tParts[0], 10);
+      const tM = parseInt(tParts[1], 10);
+      const tY = parseInt(tParts[2], 10);
+
+      const cleanTime = timeStr.split(",")[0].trim();
+      const sParts = cleanTime.split("/");
+      if (sParts.length === 3) {
+        const sD = parseInt(sParts[0], 10);
+        const sM = parseInt(sParts[1], 10);
+        const sY = parseInt(sParts[2], 10);
+        return sD === tD && sM === tM && sY === tY;
+      }
+      
+      const isoParts = cleanTime.split("-");
+      if (isoParts.length === 3) {
+        const sY = parseInt(isoParts[0], 10);
+        const sM = parseInt(isoParts[1], 10);
+        const sD = parseInt(isoParts[2], 10);
+        return sD === tD && sM === tM && sY === tY;
+      }
+
+      return cleanTime === targetDateStr;
+    }
+
+    function getProjectAutoStatus(p, projectTodayLogs) {
+      let isBlocked = false;
+      let isBehind = false;
+      let isAtRisk = false;
+
+      p.tasks.forEach(t => {
+        if (t.pct < 100) {
+          if (t.lateReason && t.lateReason.trim() !== "") {
+            isBlocked = true;
+          }
+          const d = diffDays(t.extDeadline || t.deadline);
+          if (d !== null) {
+            if (d < 0) {
+              isBehind = true;
+            } else if (d >= 0 && d <= 2) {
+              isAtRisk = true;
+            }
+          }
+        }
+      });
+
+      if (isBlocked) return "Blocked";
+      if (isBehind) return "Behind";
+      if (isAtRisk) return "At Risk";
+      if (projectTodayLogs.length === 0) return "No Activity";
+      return "On Track";
+    }
+
+    function toggleLHAISettings(forceExpand = false) {
+      const content = document.getElementById("lh-ai-settings-content");
+      const icon = document.getElementById("lh-ai-toggle-icon");
+      if (content && icon) {
+        if (forceExpand) {
+          content.classList.remove("hidden");
+          icon.textContent = "▲ Collapse";
+        } else {
+          const isHidden = content.classList.contains("hidden");
+          content.classList.toggle("hidden", !isHidden);
+          icon.textContent = isHidden ? "▲ Collapse" : "▼ Expand";
+        }
+      }
+    }
+
+    function ensureGeminiApiKey() {
+      if (geminiApiKey && geminiApiKey.trim()) return true;
+
+      const inputKey = prompt("Silakan masukkan Gemini API Key Anda untuk menghubungkan ke AI (atau kosongkan untuk membatalkan):");
+      if (inputKey && inputKey.trim()) {
+        geminiApiKey = inputKey.trim();
+        saveState();
+        if (typeof window.initGeminiModel === 'function') {
+          window.initGeminiModel(geminiApiKey);
+        }
+        
+        const keyInput = document.getElementById("lh-gemini-key");
+        if (keyInput) keyInput.value = geminiApiKey;
+        return true;
+      }
+
+      alert("Silakan masukkan Gemini API Key terlebih dahulu di Pengaturan Gemini AI.");
+      
+      const lhPage = document.getElementById("page-laporan-harian");
+      if (lhPage && !lhPage.classList.contains("active")) {
+        const lhNavBtn = document.querySelector("button[onclick*='laporan-harian']");
+        if (lhNavBtn) {
+          showPage('laporan-harian', lhNavBtn);
+        }
+      }
+      
+      toggleLHAISettings(true);
+      
+      const input = document.getElementById("lh-gemini-key");
+      if (input) {
+        input.focus();
+        input.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      
+      return false;
+    }
+
+    function saveLHAiKey() {
+      const input = document.getElementById("lh-gemini-key");
+      const msg = document.getElementById("lh-ai-key-msg");
+      if (input && msg) {
+        const key = input.value.trim();
+        geminiApiKey = key;
+        saveState();
+        if (typeof window.initGeminiModel === 'function') {
+          window.initGeminiModel(geminiApiKey);
+        }
+        msg.textContent = "✓ Key berhasil disimpan!";
+        msg.style.color = "#5DCAA5";
+        setTimeout(() => { msg.textContent = ""; }, 3000);
+      }
+    }
+
+    function initLHDayData(todayKey) {
+      if (!laporanHarian[todayKey]) {
+        laporanHarian[todayKey] = {
+          trackerName: currentUser || "—",
+          readyForReview: false,
+          reportStatus: "Menunggu",
+          projects: {},
+          narratives: {}
+        };
+      }
+      const dayData = laporanHarian[todayKey];
+      if (!dayData.reportStatus) dayData.reportStatus = "Menunggu";
+      if (!dayData.projects) dayData.projects = {};
+      if (!dayData.narratives) dayData.narratives = {};
+      return dayData;
+    }
+
+    function updateLHDraft(projId, field, val) {
+      const todayKey = todayStr();
+      const dayData = initLHDayData(todayKey);
+      if (!dayData.projects[projId]) {
+        dayData.projects[projId] = { kendala: "", rencana: "", health: "", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "" };
+      }
+      dayData.projects[projId][field] = val;
+      saveState();
+    }
+
+    function updateLHHealth(projId, healthVal) {
+      const todayKey = todayStr();
+      const dayData = initLHDayData(todayKey);
+      if (!dayData.projects[projId]) {
+        dayData.projects[projId] = { kendala: "", rencana: "", health: "", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "" };
+      }
+      dayData.projects[projId].health = healthVal;
+      saveState();
+      renderLaporanHarian();
+    }
+
+    function updateLHNarrative(projId, val) {
+      const todayKey = todayStr();
+      const dayData = initLHDayData(todayKey);
+      dayData.narratives[projId] = val;
+      saveState();
+    }
+
+    async function generateProjectNarrative(projId, btn) {
+      if (!ensureGeminiApiKey()) {
+        return;
+      }
+
+      const p = projects.find(x => x.id === projId);
+      if (!p) return;
+
+      const todayStrID = formatDateID();
+      const todayKey = todayStr();
+      const todayLogs = updateLog.filter(l => isTodayLog(l.time, todayStrID));
+      const projectTodayLogs = todayLogs.filter(l => l.projId === p.id);
+
+      const progressInfo = getProjectProgress().find(x => x.id === p.id);
+      const pctAvg = progressInfo ? progressInfo.pctAvg : 0;
+      const currentStageName = progressInfo ? progressInfo.currentStageName : "Not Started";
+
+      const updatesTodayText = projectTodayLogs.length > 0 
+        ? projectTodayLogs.map(l => `${l.task} (${l.before}% -> ${l.after}%)`).join(", ")
+        : "Tidak ada update hari ini";
+
+      const picsTodaySet = new Set(projectTodayLogs.map(l => l.person).filter(Boolean));
+      const picsTodayText = picsTodaySet.size > 0 
+        ? Array.from(picsTodaySet).join(", ")
+        : "—";
+
+      const autoStatus = getProjectAutoStatus(p, projectTodayLogs);
+      
+      const completedTasksToday = p.tasks.filter(t => t.pct === 100 && t.completedAt && matchesDate(t.completedAt, todayKey));
+      const completedTasksText = completedTasksToday.length > 0 ? completedTasksToday.map(t => t.name).join(", ") : "Tidak ada";
+
+      const dayData = laporanHarian[todayKey] || { projects: {}, narratives: {} };
+      const projData = dayData.projects[p.id] || { kendala: "", rencana: "", health: "" };
+
+      const promptText = `Tugas Anda adalah menulis narasi laporan harian singkat dan profesional untuk klien (format B2B) mengenai progress pengerjaan proyek berikut:
+Nama Proyek: ${p.name}
+Klien: ${p.client}
+Progress Overall: ${pctAvg}%
+Tahap Aktif: ${currentStageName}
+Update Hari Ini: ${updatesTodayText}
+Task Selesai Hari Ini: ${completedTasksText}
+PIC Aktif Hari Ini: ${picsTodayText}
+Status Otomatis Sistem: ${autoStatus}
+Kendala Hari Ini: ${projData.kendala || "Tidak ada kendala"}
+Rencana Besok/Tindak Lanjut: ${projData.rencana || "Melanjutkan progress tahap berjalan"}
+
+Gunakan bahasa Indonesia yang santun, formal, ringkas, terstruktur, dan siap dikirimkan kepada klien.
+Fokus pada hal-hal penting seperti progress pengerjaan, task yang sudah diselesaikan hari ini (jika ada), kendala yang dihadapi (jika ada), serta rencana tindak lanjut secara spesifik dan terperinci.
+PENTING: Jangan menyertakan status "Health Proyek", "Kondisi Proyek", status seperti "On Track"/"At Risk"/"Behind", atau indikator emoji warna terkait (seperti 🟢, 🟡, 🔴) di dalam narasi yang Anda buat.
+Untuk Rencana Besok/Tindak Lanjut, jangan sekadar menulis 'melanjutkan progress tahap berjalan', melainkan jelaskan secara spesifik dan detail apa yang akan dilakukan berdasarkan rencana dan tahapan saat ini.
+Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasinya saja.`;
+
+      // Show spinner
+      const spinner = btn.querySelector(".lh-spinner");
+      if (spinner) spinner.classList.remove("hidden");
+      btn.disabled = true;
+
+      try {
+        const model = window.geminiModel;
+        if (!model) {
+          throw new Error("Gemini model not initialized. Check your API Key.");
+        }
+
+        const result = await model.generateContent(promptText);
+        const response = await result.response;
+        let text = response.text().trim();
+
+        if (text) {
+          text = cleanAndValidateNarrative(text);
+          updateLHNarrative(p.id, text);
+          const txtArea = document.getElementById(`lh-narrative-${p.id}`);
+          if (txtArea) txtArea.value = text;
+        } else {
+          alert("Gagal membuat narasi. Response kosong.");
+        }
+      } catch (err) {
+        console.error(err);
+        const errMsg = err.message || JSON.stringify(err);
+        const maskedKey = geminiApiKey ? (geminiApiKey.substring(0, 10) + "..." + geminiApiKey.substring(geminiApiKey.length - 4)) : "KOSONG";
+        alert("Gagal membuat narasi.\n\nAPI Key yang digunakan: " + maskedKey + "\n\nDetail Error: " + errMsg);
+      } finally {
+        if (spinner) spinner.classList.add("hidden");
+        btn.disabled = false;
+      }
+    }
+
+    function saveLaporanHarian(showNotification = true) {
+      const todayKey = todayStr();
+      if (laporanHarian[todayKey]) {
+        laporanHarian[todayKey].trackerName = currentUser || "—";
+      }
+      saveState();
+      if (showNotification) {
+        alert("Laporan Harian berhasil disimpan ke sistem.");
+      }
+    }
+
+    function kirimKeCommunicator() {
+      const dayOfWeek = new Date().getDay();
+      if (dayOfWeek !== 2 && dayOfWeek !== 4) {
+        alert("Pengiriman ke Communicator hanya dapat dilakukan pada hari Selasa dan Kamis.");
+        return;
+      }
+
+      const todayKey = todayStr();
+      const dayData = initLHDayData(todayKey);
+      dayData.readyForReview = true;
+      saveState();
+      renderLaporanHarian();
+      alert("Laporan Harian berhasil dikirim ke Communicator untuk direview!");
+      triggerAutomations();
+    }
+
+    function autoExportLaporanToSheets() {
+      if (!sheetsUrl) {
+        console.warn("Auto Google Sheets: Script URL Google Sheets belum diatur.");
+        return;
+      }
+      
+      const todayKey = todayStr();
+      const refDateParts = todayKey.split("-");
+      const refDate = new Date(parseInt(refDateParts[0], 10), parseInt(refDateParts[1], 10) - 1, parseInt(refDateParts[2], 10));
+      const periodDates = getIncludedDates(refDate);
+      const periodFormattedDates = periodDates.map(d => formatDateID(d));
+      const periodYmds = periodDates.map(d => d.toISOString().slice(0, 10));
+
+      const dayData = laporanHarian[todayKey];
+      if (!dayData) {
+        console.warn("Auto Google Sheets: Tidak ada data laporan harian hari ini.");
+        return;
+      }
+
+      const activeProjects = projects.filter(p => p.status === "Aktif")
+        .sort((a, b) => (a.priority || 1) - (b.priority || 1));
+
+      const rows = activeProjects.map(p => {
+        const projectTodayLogs = updateLog.filter(l => l.projId === p.id && periodFormattedDates.some(fDate => isTodayLog(l.time, fDate)));
+
+        const progressInfo = getProjectProgress().find(x => x.id === p.id);
+        const pctAvg = progressInfo ? progressInfo.pctAvg : 0;
+        const currentStageName = progressInfo ? progressInfo.currentStageName : "Not Started";
+        let activeStageProgress = 0;
+        if (progressInfo) {
+          const activeStageDetail = progressInfo.stageDetails.find(s => s.name === currentStageName);
+          if (activeStageDetail) {
+            activeStageProgress = activeStageDetail.pct;
+          }
+        }
+
+        const updatesTodayText = projectTodayLogs.length > 0 
+          ? projectTodayLogs.map(l => `${l.task} (${l.before}% -> ${l.after}%)`).join(", ")
+          : "Tidak ada update hari ini";
+
+        const picsTodaySet = new Set(projectTodayLogs.map(l => l.person).filter(Boolean));
+        const picsTodayText = picsTodaySet.size > 0 
+          ? Array.from(picsTodaySet).join(", ")
+          : "—";
+
+        const autoStatus = getProjectAutoStatus(p, projectTodayLogs);
+        const projData = dayData.projects[p.id] || { kendala: "", rencana: "", health: "", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "" };
+        
+        let combinedKendalaArr = [];
+        let combinedRencanaArr = [];
+        periodYmds.forEach(ymd => {
+          const dData = laporanHarian[ymd];
+          if (dData && dData.projects && dData.projects[p.id]) {
+            const pData = dData.projects[p.id];
+            if (pData.kendala && pData.kendala.trim()) {
+              combinedKendalaArr.push(pData.kendala.trim());
+            }
+            if (pData.rencana && pData.rencana.trim()) {
+              combinedRencanaArr.push(pData.rencana.trim());
+            }
+          }
+        });
+        const combinedKendala = combinedKendalaArr.filter((v, i, a) => a.indexOf(v) === i).join("; ") || "—";
+        const combinedRencana = combinedRencanaArr.filter((v, i, a) => a.indexOf(v) === i).join("; ") || "Melanjutkan progress tahap berjalan";
+
+        const pembuka = projData.narasiPembuka || "";
+        const detail = projData.narasiDetail || "";
+        const penutup = projData.narasiPenutup || "";
+        const narrativeText = [pembuka, detail, penutup].filter(Boolean).join("\n\n") || dayData.narratives[p.id] || "";
+
+        return {
+          project: p.name,
+          client: p.client,
+          type: p.type,
+          progressOverall: pctAvg,
+          activeStage: currentStageName,
+          progressStage: activeStageProgress,
+          updatesToday: updatesTodayText,
+          picToday: picsTodayText,
+          status: autoStatus,
+          kendala: combinedKendala,
+          rencana: combinedRencana,
+          health: "—",
+          narrative: narrativeText || "—"
+        };
+      });
+
+      const payload = {
+        action: "export_laporan_harian",
+        date: todayStrID,
+        rows: rows
+      };
+
+      console.log("Auto Google Sheets: Memulai proses ekspor...");
+
+      fetch(sheetsUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "text/plain"
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        console.log("Auto Google Sheets: Sukses! Data laporan berhasil dikirim ke Google Sheets.");
+      })
+      .catch(err => {
+        console.error("Auto Google Sheets: Koneksi gagal:", err);
+      });
+    }
+
+    function sendGroupNotificationForPriority1(p) {
+      if (!waToken) {
+        console.warn(`Auto WA Group: Token WA belum diisi.`);
+        return;
+      }
+      if (!waGroupTarget) {
+        console.warn(`Auto WA Group: Target Grup WA belum dikonfigurasi.`);
+        return;
+      }
+
+      const todayKey = todayStr();
+      const todayStrID = formatDateID();
+      const dayData = initLHDayData(todayKey);
+      
+      const progressInfo = getProjectProgress().find(x => x.id === p.id);
+      const pctAvg = progressInfo ? progressInfo.pctAvg : 0;
+      const currentStageName = progressInfo ? progressInfo.currentStageName : "Not Started";
+      let activeStageProgress = 0;
+      if (progressInfo) {
+        const activeStageDetail = progressInfo.stageDetails.find(s => s.name === currentStageName);
+        if (activeStageDetail) {
+          activeStageProgress = activeStageDetail.pct;
+        }
+      }
+
+      const todayLogs = updateLog.filter(l => isTodayLog(l.time, todayStrID));
+      const projectTodayLogs = todayLogs.filter(l => l.projId === p.id);
+      const updatesTodayText = projectTodayLogs.length > 0 
+        ? projectTodayLogs.map(l => `• ${l.task} (${l.before}% -> ${l.after}%)`).join("\n")
+        : "- Tidak ada update task hari ini";
+
+      const projData = dayData.projects[p.id] || {};
+      const kp = projData.kendalaPekerjaan || "Tidak ada";
+      const hl = projData.hambatanLapangan || "Tidak ada";
+      const cp = projData.catatanPenting || "Tidak ada";
+
+      const msg = `⚠️ *PROGRESS UPDATE PROJECT URGENT (PRIORITY 1)* ⚠️\n\n` +
+                  `*Project:* ${p.name}\n` +
+                  `*Klien:* ${p.client}\n` +
+                  `*Progress Overall:* ${pctAvg}%\n` +
+                  `*Tahap Aktif:* ${currentStageName} (${activeStageProgress}%)\n\n` +
+                  `*Update Task Hari Ini:*\n${updatesTodayText}\n\n` +
+                  `*Detail Harian (Daily Tracker):*\n` +
+                  `• *Kendala Pekerjaan:* ${kp}\n` +
+                  `• *Hambatan Lapangan:* ${hl}\n` +
+                  `• *Catatan Penting:* ${cp}\n\n` +
+                  `— _Benderang Dashboard_`;
+
+      console.log(`Auto WA Group: Mengirim update grup untuk project ${p.name}...`);
+
+      fetch("https://api.fonnte.com/send", {
+        method: "POST",
+        headers: { "Authorization": waToken, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target: waGroupTarget,
+          message: msg
+        })
+      })
+      .then(r => r.json())
+      .then(res => {
+        console.log(`Auto WA Group Success for ${p.name}:`, res);
+      })
+      .catch(err => {
+        console.error(`Auto WA Group Error for ${p.name}:`, err);
+      });
+    }
+
+    function triggerAutomations() {
+      const todayKey = todayStr();
+      const dayData = initLHDayData(todayKey);
+
+      // 1. Google Sheets Auto Export
+      if (!dayData.autoExported) {
+        autoExportLaporanToSheets();
+        dayData.autoExported = true;
+        saveState();
+      }
+
+      // 2. WhatsApp Group Notification for Priority 1 Projects
+      const activeProjects = projects.filter(p => p.status === "Aktif");
+      activeProjects.forEach(p => {
+        if (p.priority === 1) {
+          if (!dayData.projects[p.id]) {
+            dayData.projects[p.id] = { kendala: "", rencana: "Melanjutkan progress tahap berjalan", health: "🟢", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "", kendalaPekerjaan: "", hambatanLapangan: "", catatanPenting: "" };
+          }
+          const projData = dayData.projects[p.id];
+          if (!projData.groupNotificationSent) {
+            sendGroupNotificationForPriority1(p);
+            projData.groupNotificationSent = true;
+            saveState();
+          }
+        }
+      });
+    }
+
+    function exportLaporanToSheets() {
+      if (!sheetsUrl) {
+        alert("Silakan atur Script URL Google Sheets terlebih dahulu di tab Export / Drive.");
+        return;
+      }
+      
+      const todayKey = todayStr();
+      const refDateParts = todayKey.split("-");
+      const refDate = new Date(parseInt(refDateParts[0], 10), parseInt(refDateParts[1], 10) - 1, parseInt(refDateParts[2], 10));
+      const periodDates = getIncludedDates(refDate);
+      const periodFormattedDates = periodDates.map(d => formatDateID(d));
+      const periodYmds = periodDates.map(d => d.toISOString().slice(0, 10));
+
+      const dayData = laporanHarian[todayKey];
+      if (!dayData) {
+        alert("Tidak ada data laporan harian hari ini.");
+        return;
+      }
+
+      // Buka spreadsheet secara instan agar pengguna langsung melihat tampilannya
+      if (spreadsheetUrl) {
+        window.open(spreadsheetUrl, '_blank');
+      } else {
+        alert("TIPS: Spreadsheet URL belum diisi di tab Export / Drive. Hubungkan agar spreadsheet langsung terbuka otomatis saat ekspor!");
+      }
+
+      const activeProjects = projects.filter(p => p.status === "Aktif")
+        .sort((a, b) => (a.priority || 1) - (b.priority || 1));
+
+      const rows = activeProjects.map(p => {
+        const projectTodayLogs = updateLog.filter(l => l.projId === p.id && periodFormattedDates.some(fDate => isTodayLog(l.time, fDate)));
+
+        const progressInfo = getProjectProgress().find(x => x.id === p.id);
+        const pctAvg = progressInfo ? progressInfo.pctAvg : 0;
+        const currentStageName = progressInfo ? progressInfo.currentStageName : "Not Started";
+        let activeStageProgress = 0;
+        if (progressInfo) {
+          const activeStageDetail = progressInfo.stageDetails.find(s => s.name === currentStageName);
+          if (activeStageDetail) {
+            activeStageProgress = activeStageDetail.pct;
+          }
+        }
+
+        const updatesTodayText = projectTodayLogs.length > 0 
+          ? projectTodayLogs.map(l => `${l.task} (${l.before}% -> ${l.after}%)`).join(", ")
+          : "Tidak ada update hari ini";
+
+        const picsTodaySet = new Set(projectTodayLogs.map(l => l.person).filter(Boolean));
+        const picsTodayText = picsTodaySet.size > 0 
+          ? Array.from(picsTodaySet).join(", ")
+          : "—";
+
+        const autoStatus = getProjectAutoStatus(p, projectTodayLogs);
+        const projData = dayData.projects[p.id] || { kendala: "", rencana: "", health: "", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "" };
+        
+        let combinedKendalaArr = [];
+        let combinedRencanaArr = [];
+        periodYmds.forEach(ymd => {
+          const dData = laporanHarian[ymd];
+          if (dData && dData.projects && dData.projects[p.id]) {
+            const pData = dData.projects[p.id];
+            if (pData.kendala && pData.kendala.trim()) {
+              combinedKendalaArr.push(pData.kendala.trim());
+            }
+            if (pData.rencana && pData.rencana.trim()) {
+              combinedRencanaArr.push(pData.rencana.trim());
+            }
+          }
+        });
+        const combinedKendala = combinedKendalaArr.filter((v, i, a) => a.indexOf(v) === i).join("; ") || "—";
+        const combinedRencana = combinedRencanaArr.filter((v, i, a) => a.indexOf(v) === i).join("; ") || "Melanjutkan progress tahap berjalan";
+
+        const pembuka = projData.narasiPembuka || "";
+        const detail = projData.narasiDetail || "";
+        const penutup = projData.narasiPenutup || "";
+        const narrativeText = [pembuka, detail, penutup].filter(Boolean).join("\n\n") || dayData.narratives[p.id] || "";
+
+        return {
+          project: p.name,
+          client: p.client,
+          type: p.type,
+          progressOverall: pctAvg,
+          activeStage: currentStageName,
+          progressStage: activeStageProgress,
+          updatesToday: updatesTodayText,
+          picToday: picsTodayText,
+          status: autoStatus,
+          kendala: combinedKendala,
+          rencana: combinedRencana,
+          health: "—",
+          narrative: narrativeText || "—"
+        };
+      });
+
+      const payload = {
+        action: "export_laporan_harian",
+        date: todayStrID,
+        rows: rows
+      };
+
+      alert("Memulai proses ekspor ke Google Sheets...");
+
+      fetch(sheetsUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "text/plain"
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        alert("Sukses! Data laporan berhasil dikirim ke Google Sheets. Silakan periksa Spreadsheet Anda.");
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Koneksi gagal: " + err.message);
+      });
+    }
+
+    function arsipkanLaporanHarian() {
+      if (!sheetsUrl) {
+        alert("Silakan atur Script URL Google Sheets terlebih dahulu di tab Export / Drive.");
+        return;
+      }
+
+      if (!confirm("Apakah Anda yakin ingin mengarsipkan laporan hari ini ke sheet 'Arsip' and membersihkan sheet 'Hari Ini'?")) {
+        return;
+      }
+
+      const payload = {
+        action: "archive_laporan_harian"
+      };
+
+      fetch(sheetsUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "text/plain"
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        alert("Sukses! Laporan hari ini berhasil diarsipkan ke riwayat.");
+        // Clear active dayData
+        const todayKey = todayStr();
+        if (laporanHarian[todayKey]) {
+          delete laporanHarian[todayKey];
+          saveState();
+          renderLaporanHarian();
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Koneksi gagal: " + err.message);
+      });
+    }
+
+    function renderLaporanHarian() {
+      const page = document.getElementById("page-laporan-harian");
+      if (!page || !page.classList.contains("active")) return;
+
+      const todayStrID = formatDateID();
+      const todayKey = todayStr();
+
+      // Set header date and tracker name
+      document.getElementById("lh-date-display").textContent = todayStrID;
+      document.getElementById("lh-tracker-display").textContent = currentUser || "—";
+
+      const dayData = initLHDayData(todayKey);
+      if (dayData.trackerName === "—" && currentUser) {
+        dayData.trackerName = currentUser;
+      }
+
+      // Update status badge
+      const badge = document.getElementById("lh-status-badge");
+      if (badge) {
+        if (dayData.readyForReview) {
+          badge.textContent = "Ready For Review";
+          badge.style.background = "#EF9F27";
+          badge.style.color = "#000";
+        } else {
+          badge.textContent = "Draft";
+          badge.style.background = "#185FA5";
+          badge.style.color = "#fff";
+        }
+      }
+
+      // Set API Key input
+      const keyInput = document.getElementById("lh-gemini-key");
+      if (keyInput && !keyInput.value) {
+        keyInput.value = geminiApiKey || "";
+      }
+
+      // Compile active projects sorted by priority ascending
+      const activeProjects = projects.filter(p => p.status === "Aktif")
+        .sort((a, b) => (a.priority || 1) - (b.priority || 1));
+
+      const container = document.getElementById("lh-report-container");
+      if (!container) return;
+
+      if (activeProjects.length === 0) {
+        container.innerHTML = `<div style="text-align: center; padding: 40px; color: #555e7a; font-size: 16px;">Tidak ada project aktif saat ini.</div>`;
+        return;
+      }
+
+      let html = "";
+      activeProjects.forEach(p => {
+        const todayLogs = updateLog.filter(l => isTodayLog(l.time, todayStrID));
+        const projectTodayLogs = todayLogs.filter(l => l.projId === p.id);
+
+        const progressInfo = getProjectProgress().find(x => x.id === p.id);
+        const pctAvg = progressInfo ? progressInfo.pctAvg : 0;
+        const currentStageName = progressInfo ? progressInfo.currentStageName : "Not Started";
+        let activeStageProgress = 0;
+        if (progressInfo) {
+          const activeStageDetail = progressInfo.stageDetails.find(s => s.name === currentStageName);
+          if (activeStageDetail) {
+            activeStageProgress = activeStageDetail.pct;
+          }
+        }
+
+        const updatesTodayText = projectTodayLogs.length > 0 
+          ? projectTodayLogs.map(l => `${l.task} (${l.before}% -> ${l.after}%)`).join(", ")
+          : "Tidak ada update hari ini";
+
+        const picsTodaySet = new Set(projectTodayLogs.map(l => l.person).filter(Boolean));
+        const picsTodayText = picsTodaySet.size > 0 
+          ? Array.from(picsTodaySet).join(", ")
+          : "—";
+
+        const autoStatus = getProjectAutoStatus(p, projectTodayLogs);
+        const projData = dayData.projects[p.id] || { kendala: "", rencana: "", health: "" };
+        const narrativeText = dayData.narratives[p.id] || "";
+
+        // Health states styling
+        const health = projData.health || "";
+        const greenActive = health === "🟢" ? "border-color: #1D9E75; background: rgba(29, 158, 117, 0.2); box-shadow: 0 0 10px rgba(29, 158, 117, 0.4);" : "opacity: 0.5;";
+        const yellowActive = health === "🟡" ? "border-color: #EF9F27; background: rgba(239, 159, 39, 0.2); box-shadow: 0 0 10px rgba(239, 159, 39, 0.4);" : "opacity: 0.5;";
+        const redActive = health === "🔴" ? "border-color: #E24B4A; background: rgba(226, 75, 74, 0.2); box-shadow: 0 0 10px rgba(226, 75, 74, 0.4);" : "opacity: 0.5;";
+
+        // Status Badge colors
+        let statusBg = "#555e7a";
+        let statusText = "#fff";
+        if (autoStatus === "Blocked") { statusBg = "#E24B4A"; }
+        else if (autoStatus === "Behind") { statusBg = "#EF9F27"; }
+        else if (autoStatus === "At Risk") { statusBg = "#e5c158"; statusText = "#000"; }
+        else if (autoStatus === "On Track") { statusBg = "#1D9E75"; }
+
+        const isProject = p.type === "project";
+        const typeBadge = isProject 
+          ? `<span style="background: rgba(93, 202, 165, 0.15); color: #5DCAA5; border: 1px solid rgba(93, 202, 165, 0.3); font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Project</span>`
+          : `<span style="background: rgba(133, 183, 235, 0.15); color: #85B7EB; border: 1px solid rgba(133, 183, 235, 0.3); font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Inquiry</span>`;
+
+        html += `
+          <div style="background: rgba(22, 28, 38, 0.7); border: 1px solid #1a1f2e; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px; backdrop-filter: blur(10px); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);">
+            
+            <!-- Header Row -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-size: 18px; font-weight: 700; color: #fff;">${esc(p.name)}</span>
+                  ${typeBadge}
+                  <span style="background: rgba(239, 159, 39, 0.1); color: #EF9F27; border: 1px solid rgba(239, 159, 39, 0.2); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">Prio ${p.priority || 1}</span>
+                </div>
+                <div style="font-size: 13px; color: #555e7a; margin-top: 4px;">Klien: <strong style="color: #d0d4e0;">${esc(p.client)}</strong></div>
+              </div>
+              <span style="background: ${statusBg}; color: ${statusText}; font-size: 12px; padding: 4px 10px; border-radius: 20px; font-weight: 700; text-transform: uppercase;">${autoStatus}</span>
+            </div>
+
+            <!-- Compiled Auto Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: rgba(10, 12, 16, 0.4); padding: 14px; border-radius: 8px; border: 1px solid #1a1f2e;">
+              <div>
+                <div style="font-size: 11px; color: #555e7a; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Progress Overall</div>
+                <div style="font-size: 20px; font-weight: 700; color: #5DCAA5; margin-top: 4px;">${pctAvg}%</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: #555e7a; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Tahap Aktif</div>
+                <div style="font-size: 14px; font-weight: 700; color: #d0d4e0; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${esc(currentStageName)}">${esc(currentStageName)}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: #555e7a; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Progress Tahap</div>
+                <div style="font-size: 20px; font-weight: 700; color: #85B7EB; margin-top: 4px;">${activeStageProgress}%</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: #555e7a; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">PIC Aktif Hari Ini</div>
+                <div style="font-size: 14px; font-weight: 700; color: #d0d4e0; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${esc(picsTodayText)}">${esc(picsTodayText)}</div>
+              </div>
+              <div style="grid-column: span 2;">
+                <div style="font-size: 11px; color: #555e7a; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Update Hari Ini</div>
+                <div style="font-size: 13px; color: #d0d4e0; margin-top: 4px; font-style: ${projectTodayLogs.length > 0 ? 'normal' : 'italic'};" title="${esc(updatesTodayText)}">${esc(updatesTodayText)}</div>
+              </div>
+            </div>
+
+            <!-- 2 Columns Manual Input -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 13px; font-weight: 600; color: #85B7EB;">Kendala / Hambatan Hari Ini</label>
+                <textarea class="fi" id="lh-kendala-${p.id}" placeholder="Tulis kendala/hambatan hari ini... (jika ada)" rows="3" style="resize: vertical; margin-bottom: 0; background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #d0d4e0; font-size: 14px;" oninput="updateLHDraft(${p.id}, 'kendala', this.value)">${esc(projData.kendala)}</textarea>
+              </div>
+              
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 13px; font-weight: 600; color: #85B7EB;">Rencana Besok</label>
+                <textarea class="fi" id="lh-rencana-${p.id}" placeholder="Tulis rencana pengerjaan besok..." rows="3" style="resize: vertical; margin-bottom: 0; background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #d0d4e0; font-size: 14px;" oninput="updateLHDraft(${p.id}, 'rencana', this.value)">${esc(projData.rencana)}</textarea>
+              </div>
+            </div>
+
+            <!-- Narrative Section (Only Visible to Admin/Communicator) -->
+            ${isAdmin ? `
+            <div style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed #1a1f2e; display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; font-weight: 600; color: #85B7EB;">🤖 Narasi Laporan Klien (Review & Edit)</span>
+                <button class="btn-blue" style="padding: 4px 10px; font-size: 12px; background: #185FA5; display: flex; align-items: center; gap: 4px;" onclick="generateProjectNarrative(${p.id}, this)">
+                  <span class="lh-spinner hidden" style="width: 12px; height: 12px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; display: inline-block; animation: lh-spin 0.8s linear infinite;"></span>
+                  <span>✨ Generate Narasi via Gemini AI</span>
+                </button>
+              </div>
+              <textarea class="fi" id="lh-narrative-${p.id}" placeholder="Narasi laporan ke klien..." rows="4" style="resize: vertical; margin-bottom: 0; background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #d0d4e0; font-size: 14px; font-family: 'Segoe UI', sans-serif; line-height: 1.5;" oninput="updateLHNarrative(${p.id}, this.value)">${esc(narrativeText)}</textarea>
+            </div>
+            ` : ''}
+
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    /* ============================================================
+           DAILY TRACKER ENGINE
+       ============================================================ */
+    function renderDailyTracker() {
+      const page = document.getElementById("page-daily-tracker");
+      if (!page || !page.classList.contains("active")) return;
+
+      const container = document.getElementById("dt-jobs-container");
+      if (!container) return;
+
+      const activeProjects = projects.filter(p => p.status === "Aktif");
+      if (activeProjects.length === 0) {
+        container.innerHTML = `<div style="text-align: center; padding: 40px; color: #555e7a; font-size: 16px;">Tidak ada project or inquiry aktif saat ini.</div>`;
+        return;
+      }
+
+      const dtDateInput = document.getElementById("dt-date-input");
+      if (dtDateInput) {
+        dtDateInput.value = getTrackerDate();
+      }
+
+      const todayKey = getTrackerDate();
+      const dayData = initLHDayData(todayKey);
+      const progressList = getProjectProgress();
+
+      let html = "";
+
+      activeProjects.forEach(p => {
+        const pProg = progressList.find(x => x.id === p.id);
+        if (!pProg) return;
+
+        const stages = p.type === "inquiry" ? INQUIRY_STAGES : PROJECT_STAGES;
+        
+        // Initialize or validate trackerStageIdx
+        if (p.trackerStageIdx === undefined || p.trackerStageIdx < 0 || p.trackerStageIdx >= stages.length) {
+          let idx = stages.findIndex(s => s.name === pProg.currentStageName);
+          if (idx < 0) idx = 0;
+          p.trackerStageIdx = idx;
+        }
+
+        const selectedStage = stages[p.trackerStageIdx];
+        const stageDetail = pProg.stageDetails[p.trackerStageIdx] || { pct: 0, status: "Not Started", tasks: [] };
+
+        const progressColor = getProgColor(stageDetail.pct);
+        const overallProgColor = getProgColor(pProg.pctAvg);
+
+        // Render stage indicators (timeline/breadcrumb)
+        const timelineHtml = stages.map((s, idx) => {
+          const isActive = idx === p.trackerStageIdx;
+          const isCompleted = pProg.stageDetails[idx]?.status === "Completed";
+          const isProgress = pProg.stageDetails[idx]?.status === "In Progress";
+          
+          let stateColor = "#1a1f2e";
+          let borderStyle = "1px solid #2a2f3e";
+          let fontColor = "#555e7a";
+          if (isActive) {
+            stateColor = "#EF9F27";
+            borderStyle = "1px solid #EF9F27";
+            fontColor = "#0f1218";
+          } else if (isCompleted) {
+            stateColor = "#085041";
+            borderStyle = "1px solid #5DCAA5";
+            fontColor = "#5DCAA5";
+          } else if (isProgress) {
+            stateColor = "#13161f";
+            borderStyle = "1px solid #85B7EB";
+            fontColor = "#85B7EB";
+          }
+
+          return `
+            <div style="flex: 1; min-width: 80px; text-align: center; font-size: 11px; padding: 6px 4px; background: ${stateColor}; border: ${borderStyle}; color: ${fontColor}; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onclick="setTrackerStage(${p.id}, ${idx})">
+              ${esc(s.name)}
+            </div>
+          `;
+        }).join(' <div style="flex-shrink:0; display:flex; align-items:center; color:#2a2f3e; font-weight:bold;">\u{279a}</div> ');
+
+        // Render tasks inside the selected stage
+        const tasksHtml = stageDetail.tasks.map(t => {
+          return `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.01); border: 1px solid #1a1f2e; border-radius: 6px; font-size: 14px;">
+              <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
+                <div class="dot" style="background:${t.pct >= 100 ? '#5DCAA5' : t.pct > 0 ? '#EF9F27' : '#E24B4A'};"></div>
+                <span style="color:#d0d4e0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${esc(t.name)}</span>
+                <span style="color:#555e7a; font-size:12px;">(${esc(getInit(t.person))})</span>
+              </div>
+              <div style="color:${t.pct >= 100 ? '#5DCAA5' : t.pct > 0 ? '#EF9F27' : '#E24B4A'}; font-weight: 700;">
+                ${t.pct}%
+              </div>
+            </div>
+          `;
+        }).join("") || `<div style="font-size: 13px; color: #555e7a; font-style: italic; text-align: center; padding: 12px;">Tidak ada task di tahap ini.</div>`;
+
+        // Initialize project data in dayData if not exists
+        if (!dayData.projects[p.id]) {
+          dayData.projects[p.id] = { kendala: "", rencana: "Melanjutkan progress tahap berjalan", health: "🟢", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "", kendalaPekerjaan: "", hambatanLapangan: "", catatanPenting: "" };
+        }
+        const projData = dayData.projects[p.id];
+
+        html += `
+          <div style="background: rgba(15, 18, 24, 0.5); border: 1px solid #1a1f2e; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px; backdrop-filter: blur(8px);">
+            <!-- Top info -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-size: 18px; font-weight: 700; color: #fff;">${esc(p.name)}</span>
+                  <span class="pr-type ${p.type === 'project' ? 'type-proj' : 'type-inq'}">${p.type === "project" ? "PROJ" : "INQ"}</span>
+                  <span style="font-size: 13px; color: #555e7a;">Â· ${esc(p.client)}</span>
+                </div>
+                <div style="font-size: 14px; color: #9097ab; margin-top: 4px;">
+                  PIC Utama: <strong style="color: #85B7EB;">${esc(getInit(pProg.mainPerson))}</strong>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 13px; color: #555e7a;">Overall Progress</div>
+                <div style="font-size: 20px; font-weight: 800; color: ${overallProgColor};">${pProg.pctAvg}%</div>
+              </div>
+            </div>
+
+            <!-- Timeline visualization of stages -->
+            <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; align-items: center; width: 100%;">
+              ${timelineHtml}
+            </div>
+
+            <!-- Stage Progress Card -->
+            <div style="background: #0a0c10; border: 1px solid #1a1f2e; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="color: #9097ab; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Tahap Dipilih:</span>
+                  <span style="color: #fff; font-weight: 600; font-size: 15px;">${esc(selectedStage.name)}</span>
+                  <span class="st-status ${stageDetail.status === 'Completed' ? 'st-done' : stageDetail.status === 'In Progress' ? 'st-progress' : 'st-pending'}" style="font-size:11px; padding: 1px 6px;">
+                    ${stageDetail.status === 'In Progress' ? 'On Progress' : stageDetail.status}
+                  </span>
+                </div>
+                <!-- Navigation buttons -->
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn-blue" style="padding: 4px 10px; font-size: 12px; margin: 0; background: ${p.trackerStageIdx > 0 ? '#185FA5' : '#1a1f2e'}; cursor: ${p.trackerStageIdx > 0 ? 'pointer' : 'default'};" ${p.trackerStageIdx > 0 ? '' : 'disabled'} onclick="changeTrackerStage(${p.id}, -1)">\u{25c0} Sebelumnya</button>
+                  <button class="btn-blue" style="padding: 4px 10px; font-size: 12px; margin: 0; background: ${p.trackerStageIdx < stages.length - 1 ? '#185FA5' : '#1a1f2e'}; cursor: ${p.trackerStageIdx < stages.length - 1 ? 'pointer' : 'default'};" ${p.trackerStageIdx < stages.length - 1 ? '' : 'disabled'} onclick="changeTrackerStage(${p.id}, 1)">Berikutnya \u{25b6}</button>
+                </div>
+              </div>
+
+              <!-- Progress bar for selected stage -->
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #9097ab; margin-bottom: 6px;">
+                  <span>Progress Tahapan</span>
+                  <span style="color: ${progressColor}; font-weight: 700;">${stageDetail.pct}%</span>
+                </div>
+                <div class="pr-bar" style="height: 6px; background: #1a1f2e;"><div class="pr-fill" style="width:${stageDetail.pct}%; background:${progressColor};"></div></div>
+              </div>
+
+              <!-- Task list in selected stage -->
+              <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+                <div style="font-size: 12px; color: #555e7a; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Daftar Task:</div>
+                ${tasksHtml}
+              </div>
+            </div>
+
+            <!-- Manual Input Section -->
+            <div style="border-top: 1px solid #1a1f2e; padding-top: 16px; margin-top: 4px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+              <div>
+                <label style="font-size: 13px; color: #EF9F27; font-weight: 600; display: block; margin-bottom: 6px;">1. Kendala Pekerjaan</label>
+                <textarea class="fi-light" style="width: 100%; min-height: 80px; font-family: inherit; font-size: 14px; padding: 8px; resize: vertical;" placeholder="Tulis kendala pekerjaan..." oninput="updateDailyTrackerDraft(${p.id}, 'kendalaPekerjaan', this.value)">${esc(projData.kendalaPekerjaan || "")}</textarea>
+              </div>
+              <div>
+                <label style="font-size: 13px; color: #EF9F27; font-weight: 600; display: block; margin-bottom: 6px;">2. Hambatan Lapangan</label>
+                <textarea class="fi-light" style="width: 100%; min-height: 80px; font-family: inherit; font-size: 14px; padding: 8px; resize: vertical;" placeholder="Tulis hambatan lapangan..." oninput="updateDailyTrackerDraft(${p.id}, 'hambatanLapangan', this.value)">${esc(projData.hambatanLapangan || "")}</textarea>
+              </div>
+              <div>
+                <label style="font-size: 13px; color: #EF9F27; font-weight: 600; display: block; margin-bottom: 6px;">3. Catatan Penting Lainnya</label>
+                <textarea class="fi-light" style="width: 100%; min-height: 80px; font-family: inherit; font-size: 14px; padding: 8px; resize: vertical;" placeholder="Tulis catatan penting..." oninput="updateDailyTrackerDraft(${p.id}, 'catatanPenting', this.value)">${esc(projData.catatanPenting || "")}</textarea>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function changeTrackerStage(projId, delta) {
+      const p = projects.find(x => x.id === projId);
+      if (!p) return;
+      
+      const stages = p.type === "inquiry" ? INQUIRY_STAGES : PROJECT_STAGES;
+      if (p.trackerStageIdx === undefined) {
+        const progressList = getProjectProgress();
+        const pProg = progressList.find(x => x.id === p.id);
+        let idx = stages.findIndex(s => s.name === pProg?.currentStageName);
+        if (idx < 0) idx = 0;
+        p.trackerStageIdx = idx;
+      }
+      
+      p.trackerStageIdx = Math.max(0, Math.min(stages.length - 1, p.trackerStageIdx + delta));
+      saveState();
+      renderDailyTracker();
+    }
+
+    function setTrackerStage(projId, idx) {
+      const p = projects.find(x => x.id === projId);
+      if (!p) return;
+      p.trackerStageIdx = idx;
+      saveState();
+      renderDailyTracker();
+    }
+
+    function updateDailyTrackerDraft(projId, field, val) {
+      const todayKey = getTrackerDate();
+      const dayData = initLHDayData(todayKey);
+      if (!dayData.projects[projId]) {
+        dayData.projects[projId] = { kendala: "", rencana: "Melanjutkan progress tahap berjalan", health: "🟢", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "", kendalaPekerjaan: "", hambatanLapangan: "", catatanPenting: "" };
+      }
+      dayData.projects[projId][field] = val;
+      
+      // Auto-combine kendalaPekerjaan and hambatanLapangan into kendala
+      const kp = (dayData.projects[projId].kendalaPekerjaan || "").trim();
+      const hl = (dayData.projects[projId].hambatanLapangan || "").trim();
+      let combined = "";
+      if (kp && hl) {
+        combined = `Kendala Pekerjaan: ${kp}\nHambatan Lapangan: ${hl}`;
+      } else if (kp) {
+        combined = kp;
+      } else if (hl) {
+        combined = hl;
+      }
+      dayData.projects[projId].kendala = combined;
+      
+      saveState();
+    }
+
+    function saveDailyTrackerData() {
+      saveState();
+
+      const activeProjects = projects.filter(p => p.status === "Aktif");
+      const todayKey = getTrackerDate();
+      const dayData = initLHDayData(todayKey);
+
+      let allFilled = activeProjects.length > 0;
+      for (const p of activeProjects) {
+        const projData = dayData.projects[p.id] || {};
+        const kp = (projData.kendalaPekerjaan || "").trim();
+        const hl = (projData.hambatanLapangan || "").trim();
+        const cp = (projData.catatanPenting || "").trim();
+        if (!kp || !hl || !cp) {
+          allFilled = false;
+          break;
+        }
+      }
+
+      if (allFilled) {
+        const parts = todayKey.split("-");
+        const dateObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        const dayOfWeek = dateObj.getDay(); // 2 is Tuesday, 4 is Thursday
+        if (dayOfWeek === 2 || dayOfWeek === 4) {
+          dayData.readyForReview = true;
+          saveState();
+          renderLaporanHarian();
+          alert("Data Daily Tracker berhasil disimpan. Semua data lengkap, laporan dikirim otomatis ke Communicator!");
+          triggerAutomations();
+        } else {
+          saveState();
+          alert("Data Daily Tracker berhasil disimpan. Semua data lengkap. Laporan hanya akan dikirim ke Communicator pada hari Selasa atau Kamis.");
+        }
+      } else {
+        alert("Data Daily Tracker berhasil disimpan.");
+      }
+    }
+
+    /* ============================================================
+           NARASI KLIEN (COMMUNICATOR) ENGINE
+       ============================================================ */
+    function renderNarasiKlien() {
+      const page = document.getElementById("page-narasi-klien");
+      if (!page || !page.classList.contains("active")) return;
+
+      const todayStrID = formatDateID();
+      const todayKey = todayStr();
+
+      // Set header values
+      document.getElementById("nk-date-display").textContent = todayStrID;
+      document.getElementById("nk-communicator-display").textContent = currentUser || "—";
+
+      const dayData = initLHDayData(todayKey);
+
+      // Populate management select list
+      populateNKManagementSelect(dayData.selectedManagement);
+
+      // Set report status select
+      const statusSelect = document.getElementById("nk-report-status");
+      if (statusSelect) {
+        statusSelect.value = dayData.reportStatus || "Menunggu";
+      }
+
+      // Compile active projects sorted by priority ascending
+      const activeProjects = projects.filter(p => p.status === "Aktif")
+        .sort((a, b) => (a.priority || 1) - (b.priority || 1));
+
+      const refDateParts = todayKey.split("-");
+      const refDate = new Date(parseInt(refDateParts[0], 10), parseInt(refDateParts[1], 10) - 1, parseInt(refDateParts[2], 10));
+      const periodDates = getIncludedDates(refDate);
+      const periodFormattedDates = periodDates.map(d => formatDateID(d));
+      const periodYmds = periodDates.map(d => d.toISOString().slice(0, 10));
+
+      const container = document.getElementById("nk-report-container");
+      if (!container) return;
+
+      if (activeProjects.length === 0) {
+        container.innerHTML = `<div style="text-align: center; padding: 40px; color: #555e7a; font-size: 16px;">Tidak ada project aktif saat ini.</div>`;
+        return;
+      }
+
+      let html = "";
+      activeProjects.forEach(p => {
+        const projectTodayLogs = updateLog.filter(l => l.projId === p.id && periodFormattedDates.some(fDate => isTodayLog(l.time, fDate)));
+
+        const progressInfo = getProjectProgress().find(x => x.id === p.id);
+        const pctAvg = progressInfo ? progressInfo.pctAvg : 0;
+        const currentStageName = progressInfo ? progressInfo.currentStageName : "Not Started";
+        let activeStageProgress = 0;
+        if (progressInfo) {
+          const activeStageDetail = progressInfo.stageDetails.find(s => s.name === currentStageName);
+          if (activeStageDetail) {
+            activeStageProgress = activeStageDetail.pct;
+          }
+        }
+
+        const updatesTodayText = projectTodayLogs.length > 0 
+          ? projectTodayLogs.map(l => `${l.task} (${l.before}% -> ${l.after}%)`).join(", ")
+          : "Tidak ada update hari ini";
+
+        const picsTodaySet = new Set(projectTodayLogs.map(l => l.person).filter(Boolean));
+        const picsTodayText = picsTodaySet.size > 0 
+          ? Array.from(picsTodaySet).join(", ")
+          : "—";
+
+        const autoStatus = getProjectAutoStatus(p, projectTodayLogs);
+        const projData = dayData.projects[p.id] || { 
+          kendala: "", 
+          rencana: "", 
+          health: "", 
+          approved: false, 
+          narasiPembuka: "", 
+          narasiDetail: "", 
+          narasiPenutup: "" 
+        };
+
+        let combinedKendalaArr = [];
+        let combinedRencanaArr = [];
+        periodYmds.forEach(ymd => {
+          const dData = laporanHarian[ymd];
+          if (dData && dData.projects && dData.projects[p.id]) {
+            const pData = dData.projects[p.id];
+            if (pData.kendala && pData.kendala.trim()) {
+              combinedKendalaArr.push(pData.kendala.trim());
+            }
+            if (pData.rencana && pData.rencana.trim()) {
+              combinedRencanaArr.push(pData.rencana.trim());
+            }
+          }
+        });
+        const combinedKendala = combinedKendalaArr.filter((v, i, a) => a.indexOf(v) === i).join("; ") || "Tidak ada kendala";
+        const combinedRencana = combinedRencanaArr.filter((v, i, a) => a.indexOf(v) === i).join("; ") || "Melanjutkan progress tahap berjalan";
+
+        // Status Badge colors
+        let statusBg = "#555e7a";
+        let statusText = "#fff";
+        if (autoStatus === "Blocked") { statusBg = "#E24B4A"; }
+        else if (autoStatus === "Behind") { statusBg = "#EF9F27"; }
+        else if (autoStatus === "At Risk") { statusBg = "#e5c158"; statusText = "#000"; }
+        else if (autoStatus === "On Track") { statusBg = "#1D9E75"; }
+
+        const isProject = p.type === "project";
+        const typeBadge = isProject 
+          ? `<span style="background: rgba(93, 202, 165, 0.15); color: #5DCAA5; border: 1px solid rgba(93, 202, 165, 0.3); font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Project</span>`
+          : `<span style="background: rgba(133, 183, 235, 0.15); color: #85B7EB; border: 1px solid rgba(133, 183, 235, 0.3); font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Inquiry</span>`;
+
+        // Approved styling
+        const isApproved = projData.approved || false;
+        const cardBorderColor = isApproved ? "#1D9E75" : "#1a1f2e";
+        const cardBoxShadow = isApproved ? "0 0 15px rgba(29, 158, 117, 0.25)" : "0 4px 24px rgba(0, 0, 0, 0.3)";
+        
+        const currentEmp = employees.find(e => e.name === currentUser);
+        const isManagementRole = currentEmp && currentEmp.role === "Management";
+        const canApprove = isAdmin || isManagementRole;
+        
+        let approveBtnText = isApproved ? "✓ Approved" : "Approve Narasi";
+        let approveBtnBg = isApproved ? "#1D9E75" : "rgba(29, 158, 117, 0.15)";
+        let approveBtnColor = isApproved ? "#fff" : "#1D9E75";
+        let approveBtnBorder = isApproved ? "1px solid #1D9E75" : "1px solid rgba(29, 158, 117, 0.3)";
+        let approveBtnCursor = "pointer";
+        let approveBtnOpacity = "1";
+        
+        if (!canApprove) {
+          approveBtnText = isApproved ? "✓ Approved by Management" : "Menunggu Approval Management";
+          approveBtnBg = isApproved ? "rgba(29, 158, 117, 0.15)" : "rgba(239, 159, 39, 0.08)";
+          approveBtnColor = isApproved ? "#1D9E75" : "#EF9F27";
+          approveBtnBorder = isApproved ? "1px solid rgba(29, 158, 117, 0.3)" : "1px solid rgba(239, 159, 39, 0.2)";
+          approveBtnCursor = "not-allowed";
+          approveBtnOpacity = "0.85";
+        }
+
+        html += `
+          <div style="background: rgba(22, 28, 38, 0.7); border: 1px solid ${cardBorderColor}; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px; backdrop-filter: blur(10px); box-shadow: ${cardBoxShadow}; transition: all 0.3s ease;">
+            
+            <!-- HEADER ROW -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-size: 18px; font-weight: 700; color: #fff;">${esc(p.name)}</span>
+                  ${typeBadge}
+                  <span style="background: rgba(239, 159, 39, 0.1); color: #EF9F27; border: 1px solid rgba(239, 159, 39, 0.2); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">Prio ${p.priority || 1}</span>
+                </div>
+                <div style="font-size: 13px; color: #555e7a; margin-top: 4px;">Klien: <strong style="color: #d0d4e0;">${esc(p.client)}</strong></div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="background: ${statusBg}; color: ${statusText}; font-size: 12px; padding: 4px 10px; border-radius: 20px; font-weight: 700; text-transform: uppercase;">${autoStatus}</span>
+                ${isApproved ? `<span style="background: rgba(29, 158, 117, 0.15); color: #1D9E75; border: 1px solid rgba(29, 158, 117, 0.3); font-size: 12px; padding: 4px 10px; border-radius: 20px; font-weight: 700;">✓ PASSED</span>` : ''}
+              </div>
+            </div>
+
+            <!-- COLLAPSED READ-ONLY STATISTICS GRID FROM LAPORAN HARIAN -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: rgba(10, 12, 16, 0.4); padding: 14px; border-radius: 8px; border: 1px solid #1a1f2e;">
+              <div>
+                <div style="font-size: 11px; color: #555e7a; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Progress Overall / Tahap</div>
+                <div style="font-size: 14px; font-weight: 700; color: #5DCAA5; margin-top: 4px;">${pctAvg}% / <span style="color: #85B7EB;">${activeStageProgress}%</span></div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: #555e7a; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Tahap / PIC Aktif</div>
+                <div style="font-size: 13px; font-weight: 700; color: #d0d4e0; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${esc(currentStageName)} / ${esc(picsTodayText)}">${esc(currentStageName)} / ${esc(picsTodayText)}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: #555e7a; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Kendala (Periode)</div>
+                <div style="font-size: 13px; font-weight: 600; color: ${combinedKendala !== 'Tidak ada kendala' ? '#E24B4A' : '#5DCAA5'}; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${esc(combinedKendala)}">${esc(combinedKendala)}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: #555e7a; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Rencana Besok</div>
+                <div style="font-size: 13px; font-weight: 700; color: #d0d4e0; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${esc(combinedRencana)}">${esc(combinedRencana)}</div>
+              </div>
+              <div style="grid-column: span 2;">
+                <div style="font-size: 11px; color: #555e7a; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Log Hari Ini</div>
+                <div style="font-size: 12px; color: #d0d4e0; margin-top: 4px; font-style: ${projectTodayLogs.length > 0 ? 'normal' : 'italic'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${esc(updatesTodayText)}">${esc(updatesTodayText)}</div>
+              </div>
+            </div>
+
+            <!-- NARRATIVE EDIT SECTION (3 PARTS) -->
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 14px; font-weight: 700; color: #85B7EB; display: flex; align-items: center; gap: 6px;">🤖 Narasi Laporan (Pembuka, Detail & Penutup)</span>
+                <button class="btn-blue" id="nk-btn-gen-${p.id}" style="padding: 6px 12px; font-size: 12px; background: #185FA5; display: flex; align-items: center; gap: 6px;" onclick="generateProjectNarrativeThreeParts(${p.id}, this)">
+                  <span class="lh-spinner hidden" style="width: 12px; height: 12px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; display: inline-block; animation: lh-spin 0.8s linear infinite;"></span>
+                  <span>✨ Generate Narasi</span>
+                </button>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <label style="font-size: 12px; font-weight: 600; color: #555e7a; text-transform: uppercase; letter-spacing: 0.5px;">1. Narasi Pembuka</label>
+                  <textarea class="fi" id="nk-pembuka-${p.id}" placeholder="Tulis narasi pembuka..." rows="4" style="resize: vertical; margin-bottom: 0; background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #d0d4e0; font-size: 13.5px;" oninput="updateNKDraft(${p.id}, 'narasiPembuka', this.value)">${esc(projData.narasiPembuka || '')}</textarea>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <label style="font-size: 12px; font-weight: 600; color: #555e7a; text-transform: uppercase; letter-spacing: 0.5px;">2. Narasi Detail Progress & Hambatan</label>
+                  <textarea class="fi" id="nk-detail-${p.id}" placeholder="Tulis narasi detail..." rows="4" style="resize: vertical; margin-bottom: 0; background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #d0d4e0; font-size: 13.5px;" oninput="updateNKDraft(${p.id}, 'narasiDetail', this.value)">${esc(projData.narasiDetail || '')}</textarea>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <label style="font-size: 12px; font-weight: 600; color: #555e7a; text-transform: uppercase; letter-spacing: 0.5px;">3. Narasi Penutup</label>
+                  <textarea class="fi" id="nk-penutup-${p.id}" placeholder="Tulis narasi penutup..." rows="4" style="resize: vertical; margin-bottom: 0; background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #d0d4e0; font-size: 13.5px;" oninput="updateNKDraft(${p.id}, 'narasiPenutup', this.value)">${esc(projData.narasiPenutup || '')}</textarea>
+                </div>
+              </div>
+
+              <!-- Action: Approve narrative for this project -->
+              <div style="display: flex; justify-content: flex-end; margin-top: 6px;">
+                <button onclick="toggleNKApproved(${p.id})" style="padding: 8px 16px; border-radius: 8px; cursor: ${approveBtnCursor}; opacity: ${approveBtnOpacity}; transition: all 0.2s; font-size: 13px; font-weight: 700; background: ${approveBtnBg}; color: ${approveBtnColor}; border: ${approveBtnBorder}; display: flex; align-items: center; gap: 6px;">
+                  <span>${approveBtnText}</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function updateNKReportStatus(val) {
+      const todayKey = todayStr();
+      const dayData = initLHDayData(todayKey);
+      dayData.reportStatus = val;
+      saveState();
+    }
+
+    function updateNKManagement(val) {
+      const todayKey = todayStr();
+      const dayData = initLHDayData(todayKey);
+      dayData.selectedManagement = val;
+      saveState();
+    }
+
+    function populateNKManagementSelect(selectedVal) {
+      const sel = document.getElementById("nk-management-select");
+      if (!sel) return;
+      
+      const managers = employees.filter(e => e.role === "Management");
+      let html = '<option value="">📢 Grup WA Target (Default)</option>';
+      managers.forEach(m => {
+        const isSelected = selectedVal === m.name ? 'selected' : '';
+        html += `<option value="${esc(m.name)}" ${isSelected}>💼 ${esc(m.name)}</option>`;
+      });
+      sel.innerHTML = html;
+    }
+
+    function updateNKDraft(projId, field, val) {
+      const todayKey = todayStr();
+      const dayData = initLHDayData(todayKey);
+      if (!dayData.projects[projId]) {
+        dayData.projects[projId] = { kendala: "", rencana: "", health: "", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "" };
+      }
+      dayData.projects[projId][field] = val;
+      saveState();
+    }
+
+    function toggleNKApproved(projId) {
+      const currentEmp = employees.find(e => e.name === currentUser);
+      const isManagementRole = currentEmp && currentEmp.role === "Management";
+      
+      if (!isAdmin && !isManagementRole) {
+        alert("Akses Ditolak!\n\nHanya Admin atau pihak Management yang bertugas memberikan approval untuk Narasi Klien.");
+        return;
+      }
+
+      const todayKey = todayStr();
+      const dayData = initLHDayData(todayKey);
+      if (!dayData.projects[projId]) {
+        dayData.projects[projId] = { kendala: "", rencana: "", health: "", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "" };
+      }
+      dayData.projects[projId].approved = !dayData.projects[projId].approved;
+
+      // Auto-update report status: if all active projects with narratives are approved → "Disetujui"
+      const activeProjects = projects.filter(p => p.status === "Aktif");
+      let hasAnyNarrative = false;
+      let allApproved = true;
+      activeProjects.forEach(p => {
+        const pData = dayData.projects[p.id] || {};
+        const combined = [(pData.narasiPembuka || ""), (pData.narasiDetail || ""), (pData.narasiPenutup || "")].join("").trim();
+        if (combined) {
+          hasAnyNarrative = true;
+          if (!pData.approved) allApproved = false;
+        }
+      });
+
+      if (hasAnyNarrative && allApproved) {
+        dayData.reportStatus = "Disetujui";
+      } else if (dayData.reportStatus === "Disetujui") {
+        dayData.reportStatus = "Menunggu Approval";
+      }
+
+      saveState();
+      renderNarasiKlien();
+    }
+
+    async function generateProjectNarrativeThreeParts(projId, btn, isBatch = false) {
+      if (!geminiApiKey) {
+        if (!isBatch && !ensureGeminiApiKey()) return;
+        if (isBatch) return;
+      }
+
+      const p = projects.find(x => x.id === projId);
+      if (!p) return;
+
+      const todayKey = todayStr();
+      const refDateParts = todayKey.split("-");
+      const refDate = new Date(parseInt(refDateParts[0], 10), parseInt(refDateParts[1], 10) - 1, parseInt(refDateParts[2], 10));
+      const periodDates = getIncludedDates(refDate);
+      const periodFormattedDates = periodDates.map(d => formatDateID(d));
+      const periodYmds = periodDates.map(d => d.toISOString().slice(0, 10));
+
+      const projectTodayLogs = updateLog.filter(l => l.projId === p.id && periodFormattedDates.some(fDate => isTodayLog(l.time, fDate)));
+
+      const progressInfo = getProjectProgress().find(x => x.id === p.id);
+      const pctAvg = progressInfo ? progressInfo.pctAvg : 0;
+      const currentStageName = progressInfo ? progressInfo.currentStageName : "Not Started";
+
+      const updatesTodayText = projectTodayLogs.length > 0 
+        ? projectTodayLogs.map(l => `${l.task} (${l.before}% -> ${l.after}%)`).join(", ")
+        : "Tidak ada update hari ini";
+
+      const picsTodaySet = new Set(projectTodayLogs.map(l => l.person).filter(Boolean));
+      const picsTodayText = picsTodaySet.size > 0 
+        ? Array.from(picsTodaySet).join(", ")
+        : "—";
+
+      const autoStatus = getProjectAutoStatus(p, projectTodayLogs);
+      
+      const dayData = initLHDayData(todayKey);
+      
+      let combinedKendalaArr = [];
+      let combinedRencanaArr = [];
+      periodYmds.forEach(ymd => {
+        const dData = laporanHarian[ymd];
+        if (dData && dData.projects && dData.projects[p.id]) {
+          const pData = dData.projects[p.id];
+          if (pData.kendala && pData.kendala.trim()) {
+            combinedKendalaArr.push(pData.kendala.trim());
+          }
+          if (pData.rencana && pData.rencana.trim()) {
+            combinedRencanaArr.push(pData.rencana.trim());
+          }
+        }
+      });
+      const combinedKendala = combinedKendalaArr.filter((v, i, a) => a.indexOf(v) === i).join("; ") || "Tidak ada kendala";
+      const combinedRencana = combinedRencanaArr.filter((v, i, a) => a.indexOf(v) === i).join("; ") || "Melanjutkan progress tahap berjalan";
+
+      const promptText = `Tugas Anda adalah menulis narasi laporan harian untuk klien (format B2B) mengenai progress pengerjaan proyek berikut dalam 3 bagian terpisah: Pembuka, Detail Progress & Kendala, dan Penutup.
+
+Informasi Proyek:
+Nama Proyek: ${p.name}
+Klien: ${p.client}
+Progress Overall: ${pctAvg}%
+Tahap Aktif: ${currentStageName}
+Update Selama Periode: ${updatesTodayText}
+PIC Aktif Selama Periode: ${picsTodayText}
+Status Otomatis Sistem: ${autoStatus}
+Kendala Selama Periode: ${combinedKendala}
+Rencana Besok / Tindak Lanjut: ${combinedRencana}
+
+Gunakan bahasa Indonesia yang santun, formal, ringkas, terstruktur, dan siap dikirimkan kepada klien.
+Pembuka: Berisi salam pembuka yang sopan, penyebutan hari/tanggal, dan pengantar laporan harian proyek bersangkutan.
+Detail Progress & Kendala: Rangkum kemajuan yang dicapai selama periode ini (termasuk tugas dan persentase jika relevan), jelaskan kendala yang dialami secara transparan dan solutif (jika ada), serta sampaikan rencana kelanjutan pengerjaan besok secara jelas.
+Penutup: Berisi ucapan terima kasih atas kerja sama klien, penutup laporan yang profesional, dan salam penutup.
+
+Format output WAJIB menggunakan tag XML berikut:
+<pembuka>Teks Pembuka di sini</pembuka>
+<detail>Teks Detail di sini</detail>
+<penutup>Teks Penutup di sini</penutup>
+
+Jangan tambahkan teks pengantar, penjelas, atau penutup lain di luar tag tersebut. Tulis teks langsung di dalam tag.`;
+
+      // Show spinner
+      let spinner = null;
+      if (btn) spinner = btn.querySelector(".lh-spinner");
+      if (spinner) spinner.classList.remove("hidden");
+      if (btn) btn.disabled = true;
+
+      try {
+        const model = window.geminiModel;
+        if (!model) {
+          throw new Error("Gemini model not initialized. Check your API Key.");
+        }
+
+        const result = await model.generateContent(promptText);
+        const response = await result.response;
+        const text = response.text().trim();
+
+        if (text) {
+          // XML Parsing via Regex (Case-insensitive & attribute/space-tolerant)
+          const pembukaMatch = text.match(/<pembuka[^>]*>([\s\S]*?)<\/pembuka>/i);
+          const detailMatch = text.match(/<detail[^>]*>([\s\S]*?)<\/detail>/i);
+          const penutupMatch = text.match(/<penutup[^>]*>([\s\S]*?)<\/penutup>/i);
+          
+          let pembukaText = pembukaMatch ? pembukaMatch[1].trim() : "";
+          let detailText = detailMatch ? detailMatch[1].trim() : "";
+          let penutupText = penutupMatch ? penutupMatch[1].trim() : "";
+
+          // Fallback if parsing fails
+          if (!pembukaText && !detailText && !penutupText) {
+            let fallbackText = cleanAndValidateNarrative(text);
+            updateNKDraft(p.id, "narasiPembuka", "Selamat pagi/siang Bapak/Ibu,\nBerikut adalah update laporan harian proyek kami:");
+            updateNKDraft(p.id, "narasiDetail", fallbackText);
+            updateNKDraft(p.id, "narasiPenutup", "Terima kasih atas perhatian dan kerja samanya.");
+          } else {
+            pembukaText = cleanAndValidateNarrative(pembukaText);
+            detailText = cleanAndValidateNarrative(detailText);
+            penutupText = cleanAndValidateNarrative(penutupText);
+            updateNKDraft(p.id, "narasiPembuka", pembukaText);
+            updateNKDraft(p.id, "narasiDetail", detailText);
+            updateNKDraft(p.id, "narasiPenutup", penutupText);
+          }
+
+          // Re-render UI inputs if visible
+          const inpPembuka = document.getElementById(`nk-pembuka-${p.id}`);
+          const inpDetail = document.getElementById(`nk-detail-${p.id}`);
+          const inpPenutup = document.getElementById(`nk-penutup-${p.id}`);
+          
+          const updatedProjData = dayData.projects[p.id];
+          if (inpPembuka) inpPembuka.value = updatedProjData.narasiPembuka || "";
+          if (inpDetail) inpDetail.value = updatedProjData.narasiDetail || "";
+          if (inpPenutup) inpPenutup.value = updatedProjData.narasiPenutup || "";
+        } else {
+          if (!isBatch) alert("Gagal membuat narasi. Response kosong.");
+        }
+      } catch (err) {
+        console.error(err);
+        const errMsg = err.message || JSON.stringify(err);
+        const maskedKey = geminiApiKey ? (geminiApiKey.substring(0, 10) + "..." + geminiApiKey.substring(geminiApiKey.length - 4)) : "KOSONG";
+        if (!isBatch) {
+          alert("Gagal membuat narasi.\n\nAPI Key yang digunakan: " + maskedKey + "\n\nDetail Error: " + errMsg);
+        }
+      } finally {
+        if (spinner) spinner.classList.add("hidden");
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function generateAllProjectNarratives() {
+      const activeProjects = projects.filter(p => p.status === "Aktif");
+      if (activeProjects.length === 0) {
+        alert("Tidak ada project aktif saat ini.");
+        return;
+      }
+
+      if (!ensureGeminiApiKey()) {
+        return;
+      }
+
+      const batchBtn = document.querySelector("#page-narasi-klien button[onclick='generateAllProjectNarratives()']");
+      const spinner = document.getElementById("nk-batch-spinner");
+      if (spinner) spinner.classList.remove("hidden");
+      if (batchBtn) batchBtn.disabled = true;
+
+      try {
+        for (let i = 0; i < activeProjects.length; i++) {
+          const p = activeProjects[i];
+          const projBtn = document.getElementById(`nk-btn-gen-${p.id}`);
+          await generateProjectNarrativeThreeParts(p.id, projBtn, true);
+          // Wait 600ms to respect API rate limits
+          await new Promise(r => setTimeout(r, 600));
+        }
+        alert("Sukses! Semua narasi proyek berhasil digenerate otomatis.");
+      } catch (err) {
+        console.error(err);
+        alert("Gagal men-generate semua narasi: " + err.message);
+      } finally {
+        if (spinner) spinner.classList.add("hidden");
+        if (batchBtn) batchBtn.disabled = false;
+        renderNarasiKlien();
+      }
+    }
+
+    async function mintaApprovalWA() {
+      if (!waToken) {
+        alert("Konfigurasi WhatsApp (Token) belum diatur di menu Admin.");
+        return;
+      }
+
+      const todayKey = todayStr();
+      const dayData = initLHDayData(todayKey);
+      const activeProjects = projects.filter(p => p.status === "Aktif");
+      
+      let target = waGroupTarget;
+      const selectedManagerName = dayData.selectedManagement;
+      
+      if (selectedManagerName) {
+        const manager = employees.find(e => e.name === selectedManagerName);
+        if (manager) {
+          if (!manager.wa || !manager.wa.trim()) {
+            alert(`Pihak Management yang dipilih (${selectedManagerName}) tidak memiliki nomor WhatsApp yang terkonfigurasi di tab Karyawan & PIN.`);
+            return;
+          }
+          target = manager.wa.trim();
+        }
+      }
+
+      if (!target || !target.trim()) {
+        alert("Target pengiriman WhatsApp belum diatur. Mohon isi Grup Target di Admin atau pilih Management dengan nomor WhatsApp yang valid.");
+        return;
+      }
+
+      let msg = "";
+      if (selectedManagerName) {
+        msg += `*Halo Bapak/Ibu ${selectedManagerName} (Management),*\n\n`;
+        msg += `Saya *${currentUser || "Communicator"}* mengajukan permohonan approval untuk Narasi Klien hari ini (*${formatDateID()}*):\n\n`;
+      } else {
+        msg += "*[REQUEST APPROVAL] Narasi Klien - " + formatDateID() + "*\n\n";
+        msg += "Mohon review dan approval narasi klien berikut sebelum dikirim ke klien:\n\n";
+      }
+
+      let hasNarrative = false;
+      activeProjects.forEach(p => {
+        const projData = dayData.projects[p.id] || {};
+        const pembuka = (projData.narasiPembuka || "").trim();
+        const detail = (projData.narasiDetail || "").trim();
+        const penutup = (projData.narasiPenutup || "").trim();
+        const combinedText = [pembuka, detail, penutup].filter(Boolean).join("\n\n");
+        if (combinedText) {
+          msg += "*" + p.name + "*\n" + combinedText + "\n\n";
+          hasNarrative = true;
+        }
+      });
+
+      if (!hasNarrative) {
+        alert("Tidak ada narasi yang siap di-review. Silakan generate narasi terlebih dahulu.");
+        return;
+      }
+
+      if (selectedManagerName) {
+        msg += `Silakan login ke Dashboard Benderang Hidup Indonesia sebagai Management dan berikan approval pada masing-masing proyek yang sesuai.\n\nTerima kasih atas perhatiannya.`;
+      } else {
+        msg += "Silakan login sebagai Admin dan klik 'Approve Narasi' pada masing-masing proyek jika sudah sesuai.";
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append("target", target);
+        formData.append("message", msg);
+
+        const res = await fetch("https://api.fonnte.com/send", {
+          method: "POST",
+          headers: { "Authorization": waToken },
+          body: formData
+        });
+        const data = await res.json();
+        if (data.status) {
+          // Update status to waiting for approval and save
+          dayData.reportStatus = "Menunggu Approval";
+          saveState();
+          renderNarasiKlien();
+          if (selectedManagerName) {
+            alert(`✅ Permintaan Approval berhasil dikirim ke WhatsApp ${selectedManagerName}! Status narasi diperbarui ke 'Menunggu Approval'.`);
+          } else {
+            alert("✅ Permintaan Approval berhasil dikirim ke grup WhatsApp! Status narasi diperbarui ke 'Menunggu Approval'.");
+          }
+        } else {
+          alert("Gagal mengirim pesan: " + (data.reason || JSON.stringify(data)));
+        }
+      } catch (e) {
+        alert("Error mengirim WA: " + e.message);
+      }
+    }
+
+    function toggleApproveNarasi(projId) {
+      const todayKey = todayStr();
+      const dayData = initLHDayData(todayKey);
+      if (!dayData.approvedNarratives) dayData.approvedNarratives = {};
+      dayData.approvedNarratives[projId] = !dayData.approvedNarratives[projId];
+      saveState();
+      renderNarasiKlien();
+    }
+
+    function previewAllNarratives() {
+      const todayKey = todayStr();
+      const dayData = initLHDayData(todayKey);
+      
+      const activeProjects = projects.filter(p => p.status === "Aktif")
+        .sort((a, b) => (a.priority || 1) - (b.priority || 1));
+
+      const body = document.getElementById("preview-narasi-body");
+      if (!body) return;
+
+      let html = "";
+      let count = 0;
+
+      activeProjects.forEach(p => {
+        const projData = dayData.projects[p.id] || {};
+        const isApproved = projData.approved || false;
+        
+        const pembuka = projData.narasiPembuka || "";
+        const detail = projData.narasiDetail || "";
+        const penutup = projData.narasiPenutup || "";
+        
+        const combinedText = [pembuka, detail, penutup].filter(Boolean).join("\n\n");
+        const statusTextBadge = isApproved 
+          ? `<span style="background: rgba(29, 158, 117, 0.15); color: #1D9E75; border: 1px solid rgba(29, 158, 117, 0.3); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold;">APPROVED</span>`
+          : `<span style="background: rgba(239, 159, 39, 0.15); color: #EF9F27; border: 1px solid rgba(239, 159, 39, 0.3); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold;">BELUM APPROVE</span>`;
+
+        html += `
+          <div style="background: rgba(10, 12, 16, 0.4); border: 1px solid #1a1f2e; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #1a1f2e; padding-bottom: 8px;">
+              <span style="font-weight: 700; color: #fff; font-size: 15px;">${esc(p.name)} (${esc(p.client)})</span>
+              ${statusTextBadge}
+            </div>
+            ${combinedText ? `
+              <pre style="white-space: pre-wrap; font-family: 'Segoe UI', sans-serif; font-size: 14px; color: #d0d4e0; line-height: 1.6; margin: 0; background: rgba(0, 0, 0, 0.2); padding: 12px; border-radius: 6px; border: 1px solid #151923; user-select: all;" title="Klik untuk menyeleksi semua teks">${esc(combinedText)}</pre>
+              <div style="display: flex; justify-content: flex-end;">
+                <button class="btn-blue" style="padding: 4px 8px; font-size: 11px; background: #185FA5;" onclick="copyToClipboard(this, \`${esc(combinedText.replace(/`/g, '\\`'))}\`)">📋 Copy Text</button>
+              </div>
+            ` : `
+              <div style="font-size: 13px; color: #555e7a; font-style: italic;">Belum ada narasi untuk proyek ini.</div>
+            `}
+          </div>
+        `;
+        count++;
+      });
+
+      if (count === 0) {
+        html = `<div style="text-align: center; color: #555e7a; padding: 20px;">Tidak ada proyek aktif.</div>`;
+      }
+
+      body.innerHTML = html;
+      document.getElementById("preview-narasi-modal").classList.remove("hidden");
+    }
+
+    function closePreviewNarasi() {
+      document.getElementById("preview-narasi-modal").classList.add("hidden");
+    }
+
+    function copyToClipboard(btn, text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const oldText = btn.textContent;
+        btn.textContent = "✓ Copied!";
+        btn.style.background = "#1D9E75";
+        setTimeout(() => {
+          btn.textContent = oldText;
+          btn.style.background = "#185FA5";
+        }, 2000);
+      }).catch(err => {
+        alert("Gagal menyalin teks: " + err);
+      });
+    }
+
+    const originalRefreshUI = refreshUI;
+    refreshUI = function() {
+      if (typeof originalRefreshUI === 'function') originalRefreshUI();
+      if (typeof renderNarasiKlien === 'function') renderNarasiKlien();
+    };
 
     initPins(); populateLoginSelect(); populateResetSelect();
     if (!checkExistingSession()) { document.getElementById("login-overlay").classList.remove("hidden"); }
