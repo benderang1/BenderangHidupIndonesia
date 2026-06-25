@@ -12,16 +12,16 @@
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-analytics.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDb_qtaeKg25z_bBGGivTfUr6RdiukQW68",
-      authDomain: "realtime-progress-rtm.firebaseapp.com",
-      databaseURL: "https://realtime-progress-rtm-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "realtime-progress-rtm",
-      storageBucket: "realtime-progress-rtm.firebasestorage.app",
-      messagingSenderId: "860601456855",
-      appId: "1:860601456855:web:8f939bcd52525c02663892"
-    };
-
+   const firebaseConfig = {
+  apiKey: "AIzaSyB2c7cgJ1Cssf5XQN2k7G9u0ZiuApr6zoI",
+  authDomain: "benderang-hidup-indonesia.firebaseapp.com",
+  databaseURL: "https://benderang-hidup-indonesia-default-rtdb.firebaseio.com",
+  projectId: "benderang-hidup-indonesia",
+  storageBucket: "benderang-hidup-indonesia.firebasestorage.app",
+  messagingSenderId: "377632554783",
+  appId: "1:377632554783:web:7b2309902894289cdefa2a",
+  measurementId: "G-PWRFET8MXV"
+};
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
@@ -37,12 +37,22 @@
     console.log("Firebase initialized successfully");
 
     // Real-time listener for data sync across devices
+    // Uses retry logic to handle race condition where applyState may not yet be defined
     onValue(ref(database, 'bhi_state'), (snapshot) => {
       const data = snapshot.val();
-      if (data && typeof window.applyState === 'function') {
-        console.log("Data received from Firebase, syncing...");
-        window.applyState(data);
+      if (!data) return;
+
+      function tryApply(attempts) {
+        if (typeof window.applyState === 'function') {
+          console.log("Firebase: Data received, syncing to dashboard...");
+          window.applyState(data, true); // pass fromFirebase=true to bypass isSyncing guard
+        } else if (attempts > 0) {
+          setTimeout(() => tryApply(attempts - 1), 200);
+        } else {
+          console.warn("Firebase: applyState not found after multiple retries. Data was NOT applied.");
+        }
       }
+      tryApply(25); // retry up to 25 times = 5 seconds max wait
     });
   </script>
 
@@ -2948,8 +2958,17 @@
     }
 
     let isSyncing = false;
-    window.applyState = function (s) {
-      if (!s || isSyncing) return;
+    let isFirebaseWriting = false; // guard to prevent Firebase write-triggered re-sync loops
+
+    // fromFirebase=true: data came from Firebase listener, bypass isSyncing guard
+    window.applyState = function (s, fromFirebase) {
+      // Block only if a local saveState() is currently running AND this call is NOT from Firebase
+      if (!s || (isSyncing && !fromFirebase)) return;
+      // Block if we ourselves just wrote to Firebase (avoid echo loop)
+      if (fromFirebase && isFirebaseWriting) {
+        console.log("Firebase: Echo write detected, skipping applyState to prevent loop.");
+        return;
+      }
       isSyncing = true;
       try {
         if (s.employees && s.employees.length) employees = s.employees;
@@ -3015,9 +3034,19 @@
       } catch (e) { }
 
       // Sync to Firebase Database
+      // Set isFirebaseWriting=true while we write so that the onValue echo
+      // (Firebase calling back our own write) does not re-apply stale data.
       if (window.firebaseDb && window.firebaseSet && window.firebaseRef) {
+        isFirebaseWriting = true;
         window.firebaseSet(window.firebaseRef(window.firebaseDb, 'bhi_state'), state)
-          .catch(err => console.error("Firebase Sync Error:", err));
+          .then(() => {
+            // Release the echo guard after a short delay (Firebase onValue fires asynchronously)
+            setTimeout(() => { isFirebaseWriting = false; }, 1500);
+          })
+          .catch(err => {
+            console.error("Firebase Sync Error:", err);
+            isFirebaseWriting = false;
+          });
       }
     }
 
