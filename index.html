@@ -12,16 +12,16 @@
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-analytics.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
 
-   const firebaseConfig = {
-  apiKey: "AIzaSyB2c7cgJ1Cssf5XQN2k7G9u0ZiuApr6zoI",
-  authDomain: "benderang-hidup-indonesia.firebaseapp.com",
-  databaseURL: "https://benderang-hidup-indonesia-default-rtdb.firebaseio.com",
-  projectId: "benderang-hidup-indonesia",
-  storageBucket: "benderang-hidup-indonesia.firebasestorage.app",
-  messagingSenderId: "377632554783",
-  appId: "1:377632554783:web:7b2309902894289cdefa2a",
-  measurementId: "G-PWRFET8MXV"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyB2c7cgJ1Cssf5XQN2k7G9u0ZiuApr6zoI",
+      authDomain: "benderang-hidup-indonesia.firebaseapp.com",
+      databaseURL: "https://benderang-hidup-indonesia-default-rtdb.firebaseio.com",
+      projectId: "benderang-hidup-indonesia",
+      storageBucket: "benderang-hidup-indonesia.firebasestorage.app",
+      messagingSenderId: "377632554783",
+      appId: "1:377632554783:web:7b2309902894289cdefa2a",
+      measurementId: "G-PWRFET8MXV"
+    };
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
@@ -66,7 +66,7 @@
 
     window.geminiModel = model;
 
-    window.initGeminiModel = function(apiKey) {
+    window.initGeminiModel = function (apiKey) {
       try {
         const key = apiKey || API_KEY;
         const localGenAI = new GoogleGenerativeAI(key);
@@ -90,7 +90,7 @@
       console.error("Error loading Gemini key from localStorage:", e);
     }
 
-    window.testAI = async function(btn) {
+    window.testAI = async function (btn) {
       const spinner = btn ? btn.querySelector(".lh-spinner") : null;
       if (spinner) spinner.classList.remove("hidden");
       if (btn) btn.disabled = true;
@@ -2043,10 +2043,15 @@
       <div class="form-row"><label>Task</label><input class="fi-light" id="at-name" placeholder="Nama task"></div>
       <div class="form-row"><label>PIC</label><select class="fi-light" id="at-person"></select></div>
       <div class="form-row"><label>Stage</label><select class="fi-light" id="at-stage"></select></div>
-      <div class="form-row" id="at-deadline-row"><label>Deadline</label><input type="date" class="fi-light" id="at-deadline"></div>
-      <div class="form-row" style="margin-top:6px;padding:10px;background:#0b3320;border:1px solid #1D9E7544;border-radius:8px;" id="at-completed-row">
-        <input type="checkbox" id="at-completed" style="width:auto;accent-color:#1D9E75;cursor:pointer;" onchange="toggleCompletedMode()">
-        <label for="at-completed" style="color:#5DCAA5;font-weight:600;cursor:pointer;min-width:auto;">✓ Tandai Selesai (100%)</label>
+      <div class="form-row" id="at-deadline-row"><label>Deadline</label><input type="date" class="fi-light"
+          id="at-deadline"></div>
+      <div class="form-row"
+        style="margin-top:6px;padding:10px;background:#0b3320;border:1px solid #1D9E7544;border-radius:8px;"
+        id="at-completed-row">
+        <input type="checkbox" id="at-completed" style="width:auto;accent-color:#1D9E75;cursor:pointer;"
+          onchange="toggleCompletedMode()">
+        <label for="at-completed" style="color:#5DCAA5;font-weight:600;cursor:pointer;min-width:auto;">✓ Tandai Selesai
+          (100%)</label>
         <label style="margin-left:12px;">Tanggal Selesai</label>
         <input type="date" class="fi-light" id="at-completed-date" style="max-width:180px;">
       </div>
@@ -2083,12 +2088,18 @@
 
   <!-- MODAL PREVIEW NARASI KLIEN (COMMUNICATOR) -->
   <div class="modal-bg hidden" id="preview-narasi-modal">
-    <div class="modal-box" style="width: 750px; max-width: 95vw; background: rgba(15, 18, 24, 0.95); border: 1px solid #1a1f2e; border-radius: 16px; padding: 28px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); backdrop-filter: blur(20px);">
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1f2e; padding-bottom: 14px; margin-bottom: 20px;">
-        <span class="modal-title" style="margin-bottom: 0; color: #5DCAA5; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;">👁️ Preview Narasi Siap Kirim</span>
-        <button class="btn-cancel" onclick="closePreviewNarasi()" style="margin-bottom: 0; padding: 6px 12px; font-size: 13px; font-weight: 600; border-radius: 6px; background: rgba(226, 75, 74, 0.1); color: #E24B4A; border: 1px solid rgba(226, 75, 74, 0.2); cursor: pointer;">Tutup</button>
+    <div class="modal-box"
+      style="width: 750px; max-width: 95vw; background: rgba(15, 18, 24, 0.95); border: 1px solid #1a1f2e; border-radius: 16px; padding: 28px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); backdrop-filter: blur(20px);">
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1f2e; padding-bottom: 14px; margin-bottom: 20px;">
+        <span class="modal-title"
+          style="margin-bottom: 0; color: #5DCAA5; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;">👁️
+          Preview Narasi Siap Kirim</span>
+        <button class="btn-cancel" onclick="closePreviewNarasi()"
+          style="margin-bottom: 0; padding: 6px 12px; font-size: 13px; font-weight: 600; border-radius: 6px; background: rgba(226, 75, 74, 0.1); color: #E24B4A; border: 1px solid rgba(226, 75, 74, 0.2); cursor: pointer;">Tutup</button>
       </div>
-      <div id="preview-narasi-body" style="display: flex; flex-direction: column; gap: 20px; max-height: 60vh; overflow-y: auto; padding-right: 8px;">
+      <div id="preview-narasi-body"
+        style="display: flex; flex-direction: column; gap: 20px; max-height: 60vh; overflow-y: auto; padding-right: 8px;">
         <!-- Filled dynamically -->
       </div>
     </div>
@@ -2110,7 +2121,8 @@
     <button class="nb active" onclick="showPage('tv',this)" id="nav-tv">📺 TV Dashboard</button>
     <button class="nb" onclick="showPage('update',this)" id="nav-update">✏ Update Progress</button>
     <button class="nb" onclick="showPage('user-log',this)" id="nav-user-log">📋 Riwayat</button>
-    <button class="nb hidden" onclick="showPage('laporan-harian',this)" id="nav-laporan-harian">📝 Laporan Harian</button>
+    <button class="nb hidden" onclick="showPage('laporan-harian',this)" id="nav-laporan-harian">📝 Laporan
+      Harian</button>
     <button class="nb" onclick="showPage('daily-tracker',this)" id="nav-daily-tracker">&#128197; Daily Tracker</button>
     <button class="nb admin-tab" onclick="showPage('narasi-klien',this)" id="nav-narasi-klien">🤖 Narasi Klien</button>
     <button class="nb admin-tab" onclick="showPage('adm-project',this)" id="nav-adm-project">Project & Inquiry</button>
@@ -2146,7 +2158,8 @@
         </div>
         <div class="priority-grid" id="priority-grid"></div>
         <!-- Progress Overall Container (Full Width) -->
-        <div class="prog-container" style="margin-top: 12px; border-top: none; display: flex; flex-direction: column; overflow: hidden; flex: 1;">
+        <div class="prog-container"
+          style="margin-top: 12px; border-top: none; display: flex; flex-direction: column; overflow: hidden; flex: 1;">
           <div class="prog-label">Progress Overall — Tahapan Aktif Project & Inquiry</div>
           <div class="prog-grid" id="prog-grid" style="flex: 1; overflow-y: auto; padding-right: 8px;"></div>
         </div>
@@ -2377,8 +2390,9 @@
         </div>
         <div class="form-row"><label>API Token</label><input class="fi-light" id="wa-token"
             placeholder="Token dari fonnte.com"></div>
-        <div class="form-row" style="margin-top:10px;"><label>Target Grup WA (Communicator)</label><input class="fi-light" id="wa-group-target"
-            placeholder="ID Grup WA (misal: 120363023456789@g.us atau nomor)"></div>
+        <div class="form-row" style="margin-top:10px;"><label>Target Grup WA (Communicator)</label><input
+            class="fi-light" id="wa-group-target" placeholder="ID Grup WA (misal: 120363023456789@g.us atau nomor)">
+        </div>
         <div class="form-row" style="margin-top:10px;">
           <input type="checkbox" id="wa-auto-send" style="width:auto;margin-right:8px;" onchange="toggleAutoWA()">
           <label for="wa-auto-send" style="font-size:14px;color:#d0d4e0;cursor:pointer;">Kirim pengingat otomatis setiap
@@ -2568,7 +2582,8 @@
         <div
           style="background:#0a1220;border:1px solid #1a3a6e;border-radius:7px;padding:10px 14px;margin-bottom:10px;font-size:14px;color:#85B7EB;line-height:1.8">
           <strong style="color:#d0d4e0">Setup Google Sheets (lakukan sekali):</strong><br>
-          1. Buka <a href="https://script.google.com" target="_blank" style="color:#5DCAA5">script.google.com</a> → New Project → paste kode Apps Script → ganti ID spreadsheet<br>
+          1. Buka <a href="https://script.google.com" target="_blank" style="color:#5DCAA5">script.google.com</a> → New
+          Project → paste kode Apps Script → ganti ID spreadsheet<br>
           2. Deploy → New Deployment → Web App → Execute as: Me → Who has access: Anyone<br>
           3. Copy Web App URL hasil Deploy → paste di **Script URL** di bawah<br>
           4. Copy URL Google Spreadsheet Anda → paste di **Spreadsheet URL** di bawah → klik Simpan
@@ -2584,7 +2599,9 @@
         <div class="form-row" style="margin-top:12px;">
           <button class="btn-add" onclick="saveSheets()">Simpan</button>
           <button class="btn-blue" onclick="testSheets()">Test koneksi</button>
-          <button class="btn-blue" style="background:#4285F4; color:#fff;" onclick="if(spreadsheetUrl) window.open(spreadsheetUrl, '_blank'); else alert('Isi Spreadsheet URL terlebih dahulu dan klik Simpan.');">Buka Spreadsheet ↗</button>
+          <button class="btn-blue" style="background:#4285F4; color:#fff;"
+            onclick="if(spreadsheetUrl) window.open(spreadsheetUrl, '_blank'); else alert('Isi Spreadsheet URL terlebih dahulu dan klik Simpan.');">Buka
+            Spreadsheet ↗</button>
           <span id="sheets-msg" style="font-size:14px;margin-left:8px"></span>
         </div>
         <div id="sheets-queue-info" style="font-size:13px;color:#555e7a;margin-top:6px"></div>
@@ -2661,23 +2678,29 @@
 
   <!-- TAB DAILY TRACKER -->
   <div class="page" id="page-daily-tracker">
-    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; padding-bottom: 80px;">
-      
+    <div
+      style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; padding-bottom: 80px;">
+
       <!-- HEADER CARD -->
-      <div style="background: rgba(15, 18, 24, 0.7); border: 1px solid #1a1f2e; border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);">
+      <div
+        style="background: rgba(15, 18, 24, 0.7); border: 1px solid #1a1f2e; border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);">
         <div>
-          <h2 style="font-size: 24px; font-weight: 600; color: #fff; margin-bottom: 6px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+          <h2
+            style="font-size: 24px; font-weight: 600; color: #fff; margin-bottom: 6px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
             <span>&#128197; Daily Tracker</span>
           </h2>
           <p style="font-size: 14px; color: #555e7a; margin: 0;">
             Kelola tahapan aktif pekerjaan, pantau progress, dan input kendala harian.
           </p>
           <div style="margin-top: 8px; font-size: 15px; color: #555e7a;">
-            Tanggal: <input type="date" id="dt-date-input" style="background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #5DCAA5; font-weight: 600; border-radius: 6px; padding: 4px 8px; font-size: 14px; outline: none;" onchange="updateTrackerDate(this.value)">
+            Tanggal: <input type="date" id="dt-date-input"
+              style="background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #5DCAA5; font-weight: 600; border-radius: 6px; padding: 4px 8px; font-size: 14px; outline: none;"
+              onchange="updateTrackerDate(this.value)">
           </div>
         </div>
         <div style="display: flex; gap: 8px;">
-          <button class="btn-add" style="background: #1D9E75;" onclick="saveDailyTrackerData()">&#128190; Simpan Tracker</button>
+          <button class="btn-add" style="background: #1D9E75;" onclick="saveDailyTrackerData()">&#128190; Simpan
+            Tracker</button>
         </div>
       </div>
 
@@ -2685,52 +2708,71 @@
       <div id="dt-jobs-container" style="display: flex; flex-direction: column; gap: 16px;">
         <!-- Dynamic active jobs list loaded here -->
       </div>
-      
+
     </div>
   </div>
 
   <!-- TAB LAPORAN HARIAN -->
   <div class="page" id="page-laporan-harian">
-    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; padding-bottom: 80px;">
-      
+    <div
+      style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; padding-bottom: 80px;">
+
       <!-- HEADER CARD -->
-      <div style="background: rgba(15, 18, 24, 0.7); border: 1px solid #1a1f2e; border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);">
+      <div
+        style="background: rgba(15, 18, 24, 0.7); border: 1px solid #1a1f2e; border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);">
         <div>
-          <h2 style="font-size: 24px; font-weight: 600; color: #fff; margin-bottom: 6px; letter-spacing: 0.5px;">📝 Laporan Harian</h2>
+          <h2 style="font-size: 24px; font-weight: 600; color: #fff; margin-bottom: 6px; letter-spacing: 0.5px;">📝
+            Laporan Harian</h2>
           <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-            <span style="font-size: 15px; color: #555e7a;">Hari ini: <strong style="color: #5DCAA5;" id="lh-date-display">-</strong></span>
-            <span style="font-size: 15px; color: #555e7a;">Daily Tracker: <strong style="color: #85B7EB;" id="lh-tracker-display">-</strong></span>
-            <span id="lh-status-badge" style="font-size: 13px; padding: 4px 10px; border-radius: 20px; font-weight: 600; text-transform: uppercase;"></span>
+            <span style="font-size: 15px; color: #555e7a;">Hari ini: <strong style="color: #5DCAA5;"
+                id="lh-date-display">-</strong></span>
+            <span style="font-size: 15px; color: #555e7a;">Daily Tracker: <strong style="color: #85B7EB;"
+                id="lh-tracker-display">-</strong></span>
+            <span id="lh-status-badge"
+              style="font-size: 13px; padding: 4px 10px; border-radius: 20px; font-weight: 600; text-transform: uppercase;"></span>
           </div>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="lh-action-buttons">
-          <button class="btn-add" style="background: #1D9E75;" onclick="saveLaporanHarian(true)">💾 Simpan Laporan</button>
-          <button class="btn-blue" style="background: #185FA5;" onclick="kirimKeCommunicator()">🚀 Kirim ke Communicator</button>
-          <button class="btn-add admin-tab hidden" style="background: #EF9F27; color: #fff;" id="btn-lh-export" onclick="exportLaporanToSheets()">📊 Export ke Google Sheets</button>
-          <button class="btn-warn admin-tab hidden" id="btn-lh-archive" onclick="arsipkanLaporanHarian()">📦 Arsipkan ke Riwayat</button>
+          <button class="btn-add" style="background: #1D9E75;" onclick="saveLaporanHarian(true)">💾 Simpan
+            Laporan</button>
+          <button class="btn-blue" style="background: #185FA5;" onclick="kirimKeCommunicator()">🚀 Kirim ke
+            Communicator</button>
+          <button class="btn-add admin-tab hidden" style="background: #EF9F27; color: #fff;" id="btn-lh-export"
+            onclick="exportLaporanToSheets()">📊 Export ke Google Sheets</button>
+          <button class="btn-warn admin-tab hidden" id="btn-lh-archive" onclick="arsipkanLaporanHarian()">📦 Arsipkan ke
+            Riwayat</button>
         </div>
       </div>
 
       <!-- COLLAPSIBLE AI SETTINGS CARD -->
-      <div style="background: rgba(15, 18, 24, 0.5); border: 1px solid #1a1f2e; border-radius: 12px; padding: 14px 18px; backdrop-filter: blur(5px);">
-        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleLHAISettings()">
+      <div
+        style="background: rgba(15, 18, 24, 0.5); border: 1px solid #1a1f2e; border-radius: 12px; padding: 14px 18px; backdrop-filter: blur(5px);">
+        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;"
+          onclick="toggleLHAISettings()">
           <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-size: 16px;">✨</span>
-            <span style="font-size: 14px; font-weight: 600; color: #5DCAA5; letter-spacing: 0.5px; text-transform: uppercase;">Pengaturan Gemini AI Narrative</span>
+            <span
+              style="font-size: 14px; font-weight: 600; color: #5DCAA5; letter-spacing: 0.5px; text-transform: uppercase;">Pengaturan
+              Gemini AI Narrative</span>
           </div>
           <span style="font-size: 12px; color: #555e7a;" id="lh-ai-toggle-icon">▼ Expand</span>
         </div>
-        <div id="lh-ai-settings-content" class="hidden" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid #1a1f2e;">
+        <div id="lh-ai-settings-content" class="hidden"
+          style="margin-top: 14px; padding-top: 14px; border-top: 1px solid #1a1f2e;">
           <p style="font-size: 13px; color: #555e7a; margin-bottom: 12px; line-height: 1.6;">
-            Masukkan API Key Gemini untuk mengaktifkan pembuat narasi laporan otomatis. API Key Anda disimpan aman secara lokal dan tersinkronisasi di database Anda.
+            Masukkan API Key Gemini untuk mengaktifkan pembuat narasi laporan otomatis. API Key Anda disimpan aman
+            secara lokal dan tersinkronisasi di database Anda.
           </p>
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 250px;">
-              <input type="password" class="fi-light" id="lh-gemini-key" placeholder="Masukkan API Key Gemini (AIzaSy...)" style="margin-bottom: 0;">
+              <input type="password" class="fi-light" id="lh-gemini-key"
+                placeholder="Masukkan API Key Gemini (AIzaSy...)" style="margin-bottom: 0;">
             </div>
             <button class="btn-add" style="background: #1D9E75;" onclick="saveLHAiKey()">Simpan Key</button>
-            <button class="btn-blue" style="background: #185FA5; display: flex; align-items: center; gap: 6px;" onclick="testAI(this)">
-              <span class="lh-spinner hidden" style="width: 12px; height: 12px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; display: inline-block; animation: lh-spin 0.8s linear infinite;"></span>
+            <button class="btn-blue" style="background: #185FA5; display: flex; align-items: center; gap: 6px;"
+              onclick="testAI(this)">
+              <span class="lh-spinner hidden"
+                style="width: 12px; height: 12px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; display: inline-block; animation: lh-spin 0.8s linear infinite;"></span>
               <span>⚡ TEST GEMINI</span>
             </button>
             <span id="lh-ai-key-msg" style="font-size: 13px; margin-left: 6px;"></span>
@@ -2742,24 +2784,30 @@
       <div id="lh-report-container" style="display: flex; flex-direction: column; gap: 16px;">
         <!-- Dynamic project rows loaded via JavaScript -->
       </div>
-      
+
     </div>
   </div>
 
   <!-- TAB NARASI KLIEN (COMMUNICATOR) -->
   <div class="page" id="page-narasi-klien">
-    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; padding-bottom: 80px;">
-      
+    <div
+      style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; padding-bottom: 80px;">
+
       <!-- HEADER CARD -->
-      <div style="background: rgba(15, 18, 24, 0.7); border: 1px solid #1a1f2e; border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);">
+      <div
+        style="background: rgba(15, 18, 24, 0.7); border: 1px solid #1a1f2e; border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);">
         <div>
-          <h2 style="font-size: 24px; font-weight: 600; color: #fff; margin-bottom: 6px; letter-spacing: 0.5px;">🤖 Narasi Klien</h2>
+          <h2 style="font-size: 24px; font-weight: 600; color: #fff; margin-bottom: 6px; letter-spacing: 0.5px;">🤖
+            Narasi Klien</h2>
           <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-            <span style="font-size: 15px; color: #555e7a;">Tanggal: <strong style="color: #5DCAA5;" id="nk-date-display">-</strong></span>
-            <span style="font-size: 15px; color: #555e7a;">Communicator: <strong style="color: #85B7EB;" id="nk-communicator-display">-</strong></span>
+            <span style="font-size: 15px; color: #555e7a;">Tanggal: <strong style="color: #5DCAA5;"
+                id="nk-date-display">-</strong></span>
+            <span style="font-size: 15px; color: #555e7a;">Communicator: <strong style="color: #85B7EB;"
+                id="nk-communicator-display">-</strong></span>
             <span style="font-size: 15px; color: #555e7a; display: flex; align-items: center; gap: 6px;">
-              Status Laporan: 
-              <select id="nk-report-status" onchange="updateNKReportStatus(this.value)" style="background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #fff; border-radius: 6px; padding: 4px 8px; font-size: 13px; font-weight: 600; cursor: pointer; outline: none;">
+              Status Laporan:
+              <select id="nk-report-status" onchange="updateNKReportStatus(this.value)"
+                style="background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #fff; border-radius: 6px; padding: 4px 8px; font-size: 13px; font-weight: 600; cursor: pointer; outline: none;">
                 <option value="Menunggu">⏳ Menunggu</option>
                 <option value="Sedang ditulis">✏️ Sedang ditulis</option>
                 <option value="Menunggu Approval">⏳ Menunggu Approval</option>
@@ -2768,8 +2816,9 @@
               </select>
             </span>
             <span style="font-size: 15px; color: #555e7a; display: flex; align-items: center; gap: 6px;">
-              Pilih Management: 
-              <select id="nk-management-select" onchange="updateNKManagement(this.value)" style="background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #fff; border-radius: 6px; padding: 4px 8px; font-size: 13px; font-weight: 600; cursor: pointer; outline: none;">
+              Pilih Management:
+              <select id="nk-management-select" onchange="updateNKManagement(this.value)"
+                style="background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #fff; border-radius: 6px; padding: 4px 8px; font-size: 13px; font-weight: 600; cursor: pointer; outline: none;">
                 <!-- dynamic options populated by populateNKManagementSelect -->
               </select>
             </span>
@@ -2781,19 +2830,25 @@
       <div id="nk-report-container" style="display: flex; flex-direction: column; gap: 16px;">
         <!-- Dynamic project rows loaded via JavaScript -->
       </div>
-      
+
       <!-- BOTTOM ACTIONS BAR -->
-      <div style="background: rgba(15, 18, 24, 0.7); border: 1px solid #1a1f2e; border-radius: 16px; padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; backdrop-filter: blur(10px); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);">
+      <div
+        style="background: rgba(15, 18, 24, 0.7); border: 1px solid #1a1f2e; border-radius: 16px; padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; backdrop-filter: blur(10px); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);">
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button class="btn-blue" style="background: #185FA5; display: flex; align-items: center; gap: 8px;" onclick="generateAllProjectNarratives()">
-            <span class="lh-spinner hidden" id="nk-batch-spinner" style="width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; display: inline-block; animation: lh-spin 0.8s linear infinite;"></span>
+          <button class="btn-blue" style="background: #185FA5; display: flex; align-items: center; gap: 8px;"
+            onclick="generateAllProjectNarratives()">
+            <span class="lh-spinner hidden" id="nk-batch-spinner"
+              style="width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; display: inline-block; animation: lh-spin 0.8s linear infinite;"></span>
             <span>🤖 Generate Semua Narasi</span>
           </button>
-          <button class="btn-blue" style="background: #e5c158; color: #000; font-weight: 700;" onclick="previewAllNarratives()">👁 Preview</button>
-          <button class="btn-blue" style="background: #25D366; color: #fff; font-weight: 700;" onclick="mintaApprovalWA()">📱 Minta Approval WA</button>
+          <button class="btn-blue" style="background: #e5c158; color: #000; font-weight: 700;"
+            onclick="previewAllNarratives()">👁 Preview</button>
+          <button class="btn-blue" style="background: #25D366; color: #fff; font-weight: 700;"
+            onclick="mintaApprovalWA()">📱 Minta Approval WA</button>
         </div>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button class="btn-add" style="background: #1D9E75;" id="btn-nk-export" onclick="exportLaporanToSheets()">📊 Export ke Google Sheets</button>
+          <button class="btn-add" style="background: #1D9E75;" id="btn-nk-export" onclick="exportLaporanToSheets()">📊
+            Export ke Google Sheets</button>
           <button class="btn-warn" id="btn-nk-archive" onclick="arsipkanLaporanHarian()">📦 Arsipkan ke Riwayat</button>
         </div>
       </div>
@@ -3699,12 +3754,12 @@
       // Render Today's Updates Log
       const todayStrID = formatDateID();
       const todayLogs = updateLog.filter(l => isTodayLog(l.time, todayStrID));
-      
+
       const countEl = document.getElementById("tv-today-updates-count");
       if (countEl) {
         countEl.textContent = todayLogs.length + " update";
       }
-      
+
       const listEl = document.getElementById("tv-today-updates-list");
       if (listEl) {
         if (todayLogs.length === 0) {
@@ -3712,7 +3767,7 @@
         } else {
           listEl.innerHTML = todayLogs.map(l => {
             const init = getInit(l.updatedBy || l.person || "â€”");
-            const lateStatus = l.isLate 
+            const lateStatus = l.isLate
               ? `<span style="background:#5c1a1a; color:#F09595; font-size:11px; padding:1px 5px; border-radius:3px; font-weight:600; text-transform:uppercase;">TERLAMBAT</span>`
               : `<span style="background:#0b3320; color:#5DCAA5; font-size:11px; padding:1px 5px; border-radius:3px; font-weight:600; text-transform:uppercase;">TEPAT WAKTU</span>`;
             const reasonText = l.isLate && l.reason ? `<div style="font-size:12px; color:#F09595; margin-top:3px; line-height:1.2;">Alasan: ${esc(l.reason)}</div>` : "";
@@ -5325,10 +5380,10 @@
       if (!isCompleted && !deadline) { document.getElementById("at-err").textContent = "Lengkapi deadline."; return; }
       if (isCompleted && !completedDate) { document.getElementById("at-err").textContent = "Isi tanggal selesai."; return; }
       const newTask = {
-        id: ++nTaskId, name, person, stageIdx, deadline, 
-        pct: isCompleted ? 100 : 0, 
+        id: ++nTaskId, name, person, stageIdx, deadline,
+        pct: isCompleted ? 100 : 0,
         lateReason: null, extDeadline: null,
-        createdAt: new Date().toLocaleString("id-ID"), 
+        createdAt: new Date().toLocaleString("id-ID"),
         completedAt: isCompleted ? completedDate : null
       };
       p.tasks.push(newTask);
@@ -5425,7 +5480,7 @@
         const sY = parseInt(sParts[2], 10);
         return sD === tD && sM === tM && sY === tY;
       }
-      
+
       const isoParts = cleanTime.split("-");
       if (isoParts.length === 3) {
         const sY = parseInt(isoParts[0], 10);
@@ -5490,14 +5545,14 @@
         if (typeof window.initGeminiModel === 'function') {
           window.initGeminiModel(geminiApiKey);
         }
-        
+
         const keyInput = document.getElementById("lh-gemini-key");
         if (keyInput) keyInput.value = geminiApiKey;
         return true;
       }
 
       alert("Silakan masukkan Gemini API Key terlebih dahulu di Pengaturan Gemini AI.");
-      
+
       const lhPage = document.getElementById("page-laporan-harian");
       if (lhPage && !lhPage.classList.contains("active")) {
         const lhNavBtn = document.querySelector("button[onclick*='laporan-harian']");
@@ -5505,15 +5560,15 @@
           showPage('laporan-harian', lhNavBtn);
         }
       }
-      
+
       toggleLHAISettings(true);
-      
+
       const input = document.getElementById("lh-gemini-key");
       if (input) {
         input.focus();
         input.scrollIntoView({ behavior: "smooth", block: "center" });
       }
-      
+
       return false;
     }
 
@@ -5595,17 +5650,17 @@
       const pctAvg = progressInfo ? progressInfo.pctAvg : 0;
       const currentStageName = progressInfo ? progressInfo.currentStageName : "Not Started";
 
-      const updatesTodayText = projectTodayLogs.length > 0 
+      const updatesTodayText = projectTodayLogs.length > 0
         ? projectTodayLogs.map(l => `${l.task} (${l.before}% -> ${l.after}%)`).join(", ")
         : "Tidak ada update hari ini";
 
       const picsTodaySet = new Set(projectTodayLogs.map(l => l.person).filter(Boolean));
-      const picsTodayText = picsTodaySet.size > 0 
+      const picsTodayText = picsTodaySet.size > 0
         ? Array.from(picsTodaySet).join(", ")
         : "—";
 
       const autoStatus = getProjectAutoStatus(p, projectTodayLogs);
-      
+
       const completedTasksToday = p.tasks.filter(t => t.pct === 100 && t.completedAt && matchesDate(t.completedAt, todayKey));
       const completedTasksText = completedTasksToday.length > 0 ? completedTasksToday.map(t => t.name).join(", ") : "Tidak ada";
 
@@ -5696,7 +5751,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         console.warn("Auto Google Sheets: Script URL Google Sheets belum diatur.");
         return;
       }
-      
+
       const todayKey = todayStr();
       const refDateParts = todayKey.split("-");
       const refDate = new Date(parseInt(refDateParts[0], 10), parseInt(refDateParts[1], 10) - 1, parseInt(refDateParts[2], 10));
@@ -5727,18 +5782,18 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
           }
         }
 
-        const updatesTodayText = projectTodayLogs.length > 0 
+        const updatesTodayText = projectTodayLogs.length > 0
           ? projectTodayLogs.map(l => `${l.task} (${l.before}% -> ${l.after}%)`).join(", ")
           : "Tidak ada update hari ini";
 
         const picsTodaySet = new Set(projectTodayLogs.map(l => l.person).filter(Boolean));
-        const picsTodayText = picsTodaySet.size > 0 
+        const picsTodayText = picsTodaySet.size > 0
           ? Array.from(picsTodaySet).join(", ")
           : "—";
 
         const autoStatus = getProjectAutoStatus(p, projectTodayLogs);
         const projData = dayData.projects[p.id] || { kendala: "", rencana: "", health: "", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "" };
-        
+
         let combinedKendalaArr = [];
         let combinedRencanaArr = [];
         periodYmds.forEach(ymd => {
@@ -5794,12 +5849,12 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         },
         body: JSON.stringify(payload)
       })
-      .then(() => {
-        console.log("Auto Google Sheets: Sukses! Data laporan berhasil dikirim ke Google Sheets.");
-      })
-      .catch(err => {
-        console.error("Auto Google Sheets: Koneksi gagal:", err);
-      });
+        .then(() => {
+          console.log("Auto Google Sheets: Sukses! Data laporan berhasil dikirim ke Google Sheets.");
+        })
+        .catch(err => {
+          console.error("Auto Google Sheets: Koneksi gagal:", err);
+        });
     }
 
     function sendGroupNotificationForPriority1(p) {
@@ -5815,7 +5870,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
       const todayKey = todayStr();
       const todayStrID = formatDateID();
       const dayData = initLHDayData(todayKey);
-      
+
       const progressInfo = getProjectProgress().find(x => x.id === p.id);
       const pctAvg = progressInfo ? progressInfo.pctAvg : 0;
       const currentStageName = progressInfo ? progressInfo.currentStageName : "Not Started";
@@ -5829,7 +5884,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
 
       const todayLogs = updateLog.filter(l => isTodayLog(l.time, todayStrID));
       const projectTodayLogs = todayLogs.filter(l => l.projId === p.id);
-      const updatesTodayText = projectTodayLogs.length > 0 
+      const updatesTodayText = projectTodayLogs.length > 0
         ? projectTodayLogs.map(l => `• ${l.task} (${l.before}% -> ${l.after}%)`).join("\n")
         : "- Tidak ada update task hari ini";
 
@@ -5839,16 +5894,16 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
       const cp = projData.catatanPenting || "Tidak ada";
 
       const msg = `⚠️ *PROGRESS UPDATE PROJECT URGENT (PRIORITY 1)* ⚠️\n\n` +
-                  `*Project:* ${p.name}\n` +
-                  `*Klien:* ${p.client}\n` +
-                  `*Progress Overall:* ${pctAvg}%\n` +
-                  `*Tahap Aktif:* ${currentStageName} (${activeStageProgress}%)\n\n` +
-                  `*Update Task Hari Ini:*\n${updatesTodayText}\n\n` +
-                  `*Detail Harian (Daily Tracker):*\n` +
-                  `• *Kendala Pekerjaan:* ${kp}\n` +
-                  `• *Hambatan Lapangan:* ${hl}\n` +
-                  `• *Catatan Penting:* ${cp}\n\n` +
-                  `— _Benderang Dashboard_`;
+        `*Project:* ${p.name}\n` +
+        `*Klien:* ${p.client}\n` +
+        `*Progress Overall:* ${pctAvg}%\n` +
+        `*Tahap Aktif:* ${currentStageName} (${activeStageProgress}%)\n\n` +
+        `*Update Task Hari Ini:*\n${updatesTodayText}\n\n` +
+        `*Detail Harian (Daily Tracker):*\n` +
+        `• *Kendala Pekerjaan:* ${kp}\n` +
+        `• *Hambatan Lapangan:* ${hl}\n` +
+        `• *Catatan Penting:* ${cp}\n\n` +
+        `— _Benderang Dashboard_`;
 
       console.log(`Auto WA Group: Mengirim update grup untuk project ${p.name}...`);
 
@@ -5860,13 +5915,13 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
           message: msg
         })
       })
-      .then(r => r.json())
-      .then(res => {
-        console.log(`Auto WA Group Success for ${p.name}:`, res);
-      })
-      .catch(err => {
-        console.error(`Auto WA Group Error for ${p.name}:`, err);
-      });
+        .then(r => r.json())
+        .then(res => {
+          console.log(`Auto WA Group Success for ${p.name}:`, res);
+        })
+        .catch(err => {
+          console.error(`Auto WA Group Error for ${p.name}:`, err);
+        });
     }
 
     function triggerAutomations() {
@@ -5902,7 +5957,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         alert("Silakan atur Script URL Google Sheets terlebih dahulu di tab Export / Drive.");
         return;
       }
-      
+
       const todayKey = todayStr();
       const refDateParts = todayKey.split("-");
       const refDate = new Date(parseInt(refDateParts[0], 10), parseInt(refDateParts[1], 10) - 1, parseInt(refDateParts[2], 10));
@@ -5940,18 +5995,18 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
           }
         }
 
-        const updatesTodayText = projectTodayLogs.length > 0 
+        const updatesTodayText = projectTodayLogs.length > 0
           ? projectTodayLogs.map(l => `${l.task} (${l.before}% -> ${l.after}%)`).join(", ")
           : "Tidak ada update hari ini";
 
         const picsTodaySet = new Set(projectTodayLogs.map(l => l.person).filter(Boolean));
-        const picsTodayText = picsTodaySet.size > 0 
+        const picsTodayText = picsTodaySet.size > 0
           ? Array.from(picsTodaySet).join(", ")
           : "—";
 
         const autoStatus = getProjectAutoStatus(p, projectTodayLogs);
         const projData = dayData.projects[p.id] || { kendala: "", rencana: "", health: "", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "" };
-        
+
         let combinedKendalaArr = [];
         let combinedRencanaArr = [];
         periodYmds.forEach(ymd => {
@@ -6007,13 +6062,13 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         },
         body: JSON.stringify(payload)
       })
-      .then(() => {
-        alert("Sukses! Data laporan berhasil dikirim ke Google Sheets. Silakan periksa Spreadsheet Anda.");
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Koneksi gagal: " + err.message);
-      });
+        .then(() => {
+          alert("Sukses! Data laporan berhasil dikirim ke Google Sheets. Silakan periksa Spreadsheet Anda.");
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Koneksi gagal: " + err.message);
+        });
     }
 
     function arsipkanLaporanHarian() {
@@ -6038,20 +6093,20 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         },
         body: JSON.stringify(payload)
       })
-      .then(() => {
-        alert("Sukses! Laporan hari ini berhasil diarsipkan ke riwayat.");
-        // Clear active dayData
-        const todayKey = todayStr();
-        if (laporanHarian[todayKey]) {
-          delete laporanHarian[todayKey];
-          saveState();
-          renderLaporanHarian();
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Koneksi gagal: " + err.message);
-      });
+        .then(() => {
+          alert("Sukses! Laporan hari ini berhasil diarsipkan ke riwayat.");
+          // Clear active dayData
+          const todayKey = todayStr();
+          if (laporanHarian[todayKey]) {
+            delete laporanHarian[todayKey];
+            saveState();
+            renderLaporanHarian();
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Koneksi gagal: " + err.message);
+        });
     }
 
     function renderLaporanHarian() {
@@ -6118,12 +6173,12 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
           }
         }
 
-        const updatesTodayText = projectTodayLogs.length > 0 
+        const updatesTodayText = projectTodayLogs.length > 0
           ? projectTodayLogs.map(l => `${l.task} (${l.before}% -> ${l.after}%)`).join(", ")
           : "Tidak ada update hari ini";
 
         const picsTodaySet = new Set(projectTodayLogs.map(l => l.person).filter(Boolean));
-        const picsTodayText = picsTodaySet.size > 0 
+        const picsTodayText = picsTodaySet.size > 0
           ? Array.from(picsTodaySet).join(", ")
           : "—";
 
@@ -6146,7 +6201,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         else if (autoStatus === "On Track") { statusBg = "#1D9E75"; }
 
         const isProject = p.type === "project";
-        const typeBadge = isProject 
+        const typeBadge = isProject
           ? `<span style="background: rgba(93, 202, 165, 0.15); color: #5DCAA5; border: 1px solid rgba(93, 202, 165, 0.3); font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Project</span>`
           : `<span style="background: rgba(133, 183, 235, 0.15); color: #85B7EB; border: 1px solid rgba(133, 183, 235, 0.3); font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Inquiry</span>`;
 
@@ -6256,7 +6311,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         if (!pProg) return;
 
         const stages = p.type === "inquiry" ? INQUIRY_STAGES : PROJECT_STAGES;
-        
+
         // Initialize or validate trackerStageIdx
         if (p.trackerStageIdx === undefined || p.trackerStageIdx < 0 || p.trackerStageIdx >= stages.length) {
           let idx = stages.findIndex(s => s.name === pProg.currentStageName);
@@ -6275,7 +6330,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
           const isActive = idx === p.trackerStageIdx;
           const isCompleted = pProg.stageDetails[idx]?.status === "Completed";
           const isProgress = pProg.stageDetails[idx]?.status === "In Progress";
-          
+
           let stateColor = "#1a1f2e";
           let borderStyle = "1px solid #2a2f3e";
           let fontColor = "#555e7a";
@@ -6405,7 +6460,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
     function changeTrackerStage(projId, delta) {
       const p = projects.find(x => x.id === projId);
       if (!p) return;
-      
+
       const stages = p.type === "inquiry" ? INQUIRY_STAGES : PROJECT_STAGES;
       if (p.trackerStageIdx === undefined) {
         const progressList = getProjectProgress();
@@ -6414,7 +6469,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         if (idx < 0) idx = 0;
         p.trackerStageIdx = idx;
       }
-      
+
       p.trackerStageIdx = Math.max(0, Math.min(stages.length - 1, p.trackerStageIdx + delta));
       saveState();
       renderDailyTracker();
@@ -6435,7 +6490,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         dayData.projects[projId] = { kendala: "", rencana: "Melanjutkan progress tahap berjalan", health: "🟢", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "", kendalaPekerjaan: "", hambatanLapangan: "", catatanPenting: "" };
       }
       dayData.projects[projId][field] = val;
-      
+
       // Auto-combine kendalaPekerjaan and hambatanLapangan into kendala
       const kp = (dayData.projects[projId].kendalaPekerjaan || "").trim();
       const hl = (dayData.projects[projId].hambatanLapangan || "").trim();
@@ -6448,7 +6503,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         combined = hl;
       }
       dayData.projects[projId].kendala = combined;
-      
+
       saveState();
     }
 
@@ -6548,24 +6603,24 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
           }
         }
 
-        const updatesTodayText = projectTodayLogs.length > 0 
+        const updatesTodayText = projectTodayLogs.length > 0
           ? projectTodayLogs.map(l => `${l.task} (${l.before}% -> ${l.after}%)`).join(", ")
           : "Tidak ada update hari ini";
 
         const picsTodaySet = new Set(projectTodayLogs.map(l => l.person).filter(Boolean));
-        const picsTodayText = picsTodaySet.size > 0 
+        const picsTodayText = picsTodaySet.size > 0
           ? Array.from(picsTodaySet).join(", ")
           : "—";
 
         const autoStatus = getProjectAutoStatus(p, projectTodayLogs);
-        const projData = dayData.projects[p.id] || { 
-          kendala: "", 
-          rencana: "", 
-          health: "", 
-          approved: false, 
-          narasiPembuka: "", 
-          narasiDetail: "", 
-          narasiPenutup: "" 
+        const projData = dayData.projects[p.id] || {
+          kendala: "",
+          rencana: "",
+          health: "",
+          approved: false,
+          narasiPembuka: "",
+          narasiDetail: "",
+          narasiPenutup: ""
         };
 
         let combinedKendalaArr = [];
@@ -6594,7 +6649,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         else if (autoStatus === "On Track") { statusBg = "#1D9E75"; }
 
         const isProject = p.type === "project";
-        const typeBadge = isProject 
+        const typeBadge = isProject
           ? `<span style="background: rgba(93, 202, 165, 0.15); color: #5DCAA5; border: 1px solid rgba(93, 202, 165, 0.3); font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Project</span>`
           : `<span style="background: rgba(133, 183, 235, 0.15); color: #85B7EB; border: 1px solid rgba(133, 183, 235, 0.3); font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Inquiry</span>`;
 
@@ -6602,18 +6657,18 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         const isApproved = projData.approved || false;
         const cardBorderColor = isApproved ? "#1D9E75" : "#1a1f2e";
         const cardBoxShadow = isApproved ? "0 0 15px rgba(29, 158, 117, 0.25)" : "0 4px 24px rgba(0, 0, 0, 0.3)";
-        
+
         const currentEmp = employees.find(e => e.name === currentUser);
         const isManagementRole = currentEmp && currentEmp.role === "Management";
         const canApprove = isAdmin || isManagementRole;
-        
+
         let approveBtnText = isApproved ? "✓ Approved" : "Approve Narasi";
         let approveBtnBg = isApproved ? "#1D9E75" : "rgba(29, 158, 117, 0.15)";
         let approveBtnColor = isApproved ? "#fff" : "#1D9E75";
         let approveBtnBorder = isApproved ? "1px solid #1D9E75" : "1px solid rgba(29, 158, 117, 0.3)";
         let approveBtnCursor = "pointer";
         let approveBtnOpacity = "1";
-        
+
         if (!canApprove) {
           approveBtnText = isApproved ? "✓ Approved by Management" : "Menunggu Approval Management";
           approveBtnBg = isApproved ? "rgba(29, 158, 117, 0.15)" : "rgba(239, 159, 39, 0.08)";
@@ -6725,7 +6780,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
     function populateNKManagementSelect(selectedVal) {
       const sel = document.getElementById("nk-management-select");
       if (!sel) return;
-      
+
       const managers = employees.filter(e => e.role === "Management");
       let html = '<option value="">📢 Grup WA Target (Default)</option>';
       managers.forEach(m => {
@@ -6748,7 +6803,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
     function toggleNKApproved(projId) {
       const currentEmp = employees.find(e => e.name === currentUser);
       const isManagementRole = currentEmp && currentEmp.role === "Management";
-      
+
       if (!isAdmin && !isManagementRole) {
         alert("Akses Ditolak!\n\nHanya Admin atau pihak Management yang bertugas memberikan approval untuk Narasi Klien.");
         return;
@@ -6806,19 +6861,19 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
       const pctAvg = progressInfo ? progressInfo.pctAvg : 0;
       const currentStageName = progressInfo ? progressInfo.currentStageName : "Not Started";
 
-      const updatesTodayText = projectTodayLogs.length > 0 
+      const updatesTodayText = projectTodayLogs.length > 0
         ? projectTodayLogs.map(l => `${l.task} (${l.before}% -> ${l.after}%)`).join(", ")
         : "Tidak ada update hari ini";
 
       const picsTodaySet = new Set(projectTodayLogs.map(l => l.person).filter(Boolean));
-      const picsTodayText = picsTodaySet.size > 0 
+      const picsTodayText = picsTodaySet.size > 0
         ? Array.from(picsTodaySet).join(", ")
         : "—";
 
       const autoStatus = getProjectAutoStatus(p, projectTodayLogs);
-      
+
       const dayData = initLHDayData(todayKey);
-      
+
       let combinedKendalaArr = [];
       let combinedRencanaArr = [];
       periodYmds.forEach(ymd => {
@@ -6882,7 +6937,7 @@ Jangan tambahkan teks pengantar, penjelas, atau penutup lain di luar tag tersebu
           const pembukaMatch = text.match(/<pembuka[^>]*>([\s\S]*?)<\/pembuka>/i);
           const detailMatch = text.match(/<detail[^>]*>([\s\S]*?)<\/detail>/i);
           const penutupMatch = text.match(/<penutup[^>]*>([\s\S]*?)<\/penutup>/i);
-          
+
           let pembukaText = pembukaMatch ? pembukaMatch[1].trim() : "";
           let detailText = detailMatch ? detailMatch[1].trim() : "";
           let penutupText = penutupMatch ? penutupMatch[1].trim() : "";
@@ -6906,7 +6961,7 @@ Jangan tambahkan teks pengantar, penjelas, atau penutup lain di luar tag tersebu
           const inpPembuka = document.getElementById(`nk-pembuka-${p.id}`);
           const inpDetail = document.getElementById(`nk-detail-${p.id}`);
           const inpPenutup = document.getElementById(`nk-penutup-${p.id}`);
-          
+
           const updatedProjData = dayData.projects[p.id];
           if (inpPembuka) inpPembuka.value = updatedProjData.narasiPembuka || "";
           if (inpDetail) inpDetail.value = updatedProjData.narasiDetail || "";
@@ -6971,10 +7026,10 @@ Jangan tambahkan teks pengantar, penjelas, atau penutup lain di luar tag tersebu
       const todayKey = todayStr();
       const dayData = initLHDayData(todayKey);
       const activeProjects = projects.filter(p => p.status === "Aktif");
-      
+
       let target = waGroupTarget;
       const selectedManagerName = dayData.selectedManagement;
-      
+
       if (selectedManagerName) {
         const manager = employees.find(e => e.name === selectedManagerName);
         if (manager) {
@@ -7065,7 +7120,7 @@ Jangan tambahkan teks pengantar, penjelas, atau penutup lain di luar tag tersebu
     function previewAllNarratives() {
       const todayKey = todayStr();
       const dayData = initLHDayData(todayKey);
-      
+
       const activeProjects = projects.filter(p => p.status === "Aktif")
         .sort((a, b) => (a.priority || 1) - (b.priority || 1));
 
@@ -7078,13 +7133,13 @@ Jangan tambahkan teks pengantar, penjelas, atau penutup lain di luar tag tersebu
       activeProjects.forEach(p => {
         const projData = dayData.projects[p.id] || {};
         const isApproved = projData.approved || false;
-        
+
         const pembuka = projData.narasiPembuka || "";
         const detail = projData.narasiDetail || "";
         const penutup = projData.narasiPenutup || "";
-        
+
         const combinedText = [pembuka, detail, penutup].filter(Boolean).join("\n\n");
-        const statusTextBadge = isApproved 
+        const statusTextBadge = isApproved
           ? `<span style="background: rgba(29, 158, 117, 0.15); color: #1D9E75; border: 1px solid rgba(29, 158, 117, 0.3); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold;">APPROVED</span>`
           : `<span style="background: rgba(239, 159, 39, 0.15); color: #EF9F27; border: 1px solid rgba(239, 159, 39, 0.3); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold;">BELUM APPROVE</span>`;
 
@@ -7134,7 +7189,7 @@ Jangan tambahkan teks pengantar, penjelas, atau penutup lain di luar tag tersebu
     }
 
     const originalRefreshUI = refreshUI;
-    refreshUI = function() {
+    refreshUI = function () {
       if (typeof originalRefreshUI === 'function') originalRefreshUI();
       if (typeof renderNarasiKlien === 'function') renderNarasiKlien();
     };
