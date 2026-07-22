@@ -60,7 +60,7 @@
   <script type="module">
     import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
-    const API_KEY = "AIzaSyBjTVD_ld7_ly4zAJRWGnX1fOdZvL0sSpg";
+    const API_KEY = "AQ.Ab8RN6LkH7asO2hhu9p5JR3NJ2r9AKdIvZA3w_7bjXVXzPNYxQ";
     const genAI = new GoogleGenerativeAI(API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
@@ -2313,14 +2313,18 @@
             <option value="inquiry">Inquiry</option>
           </select>
         </div>
+        <div class="form-row">
+          <label style="color:#EF9F27;font-weight:700">📅 Tanggal Mulai <span style="color:#E24B4A">*</span></label>
+          <input type="date" class="fi-light" id="np-start-date" style="border-color:#EF9F2766">
+          <label>Deadline</label><input type="date" class="fi-light" id="np-deadline">
+          <label>Priority (1-5)</label><input type="number" class="fi-sm" id="np-priority" value="1" min="1" max="5">
+        </div>
         <div style="font-size:13px;color:#555e7a;margin-bottom:6px;margin-top:4px">Task pertama (opsional):</div>
         <div class="form-row"><label>Task</label><input class="fi-light" id="np-task" placeholder="Nama task pertama">
         </div>
         <div class="form-row">
           <label>PIC</label><select class="fi-light" id="np-person"></select>
           <label>Stage</label><select class="fi-light" id="np-stage"></select>
-          <label>Deadline</label><input type="date" class="fi-light" id="np-deadline">
-          <label>Priority (1-5)</label><input type="number" class="fi-sm" id="np-priority" value="1" min="1" max="5">
         </div>
         <div class="form-row">
           <label>Foto Kiri</label><input class="fi-light" id="np-img-left" placeholder="URL Foto (Input)">
@@ -2925,6 +2929,41 @@
     // ============ HELPERS ============
     function addDays(n) { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
     function todayStr() { return addDays(0); }
+    function getProjectStartDate(p) {
+      if (p.startDate) return p.startDate;
+      if (p.createdAt) {
+        const parts = p.createdAt.split(",");
+        if (parts.length > 0) {
+          const datePart = parts[0].trim();
+          const slashParts = datePart.split("/");
+          if (slashParts.length === 3) {
+            return `${slashParts[2]}-${pad(slashParts[1])}-${pad(slashParts[0])}`;
+          }
+          const dashParts = datePart.split("-");
+          if (dashParts.length === 3) {
+            if (dashParts[0].length === 4) return datePart;
+            return `${dashParts[2]}-${pad(dashParts[1])}-${pad(dashParts[0])}`;
+          }
+        }
+      }
+      return todayStr();
+    }
+    function calculateProjectDuration(p) {
+      const startDateStr = getProjectStartDate(p);
+      const start = new Date(startDateStr);
+      start.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const diffTime = today - start;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      return Math.max(0, diffDays) + 1;
+    }
+    function formatDateIDStr(ymdStr) {
+      if (!ymdStr) return "—";
+      const parts = ymdStr.split("-");
+      if (parts.length !== 3) return ymdStr;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
     function matchesDate(completedAtStr, targetYmd) {
       if (!completedAtStr || !targetYmd) return false;
       const parts = targetYmd.split("-");
@@ -3224,7 +3263,7 @@
     let sheetsUrl = "";
     let spreadsheetUrl = "";
     let laporanHarian = {};
-    const DEFAULT_GEMINI_KEY = "AIzaSyBjTVD_ld7_ly4zAJRWGnX1fOdZvL0sSpg";
+    const DEFAULT_GEMINI_KEY = "AQ.Ab8RN6LkH7asO2hhu9p5JR3NJ2r9AKdIvZA3w_7bjXVXzPNYxQ";
     let geminiApiKey = DEFAULT_GEMINI_KEY;
     let waToken = "gRJJcDgsrMaV6ZVkd71h";
     let waGroupTarget = "";
@@ -3728,6 +3767,8 @@
             </div>`;
         }).join("");
 
+        const _dashStart = formatDateIDStr(getProjectStartDate(p));
+        const _dashDuration = calculateProjectDuration(p);
         return `
           <div class="prog-row" style="margin-bottom: 24px; padding: 20px;">
             <div class="pr-header" style="margin-bottom: 12px;">
@@ -3738,6 +3779,7 @@
                   <span style="color:#9097ab">${esc(p.client)}</span> · 
                   <span style="color:#85B7EB">${esc(getInit(p.mainPerson))}</span>
                   <span class="pr-type ${p.type === 'project' ? 'type-proj' : 'type-inq'}" style="margin-left: 10px; vertical-align: middle;">${p.type === "project" ? "PROJ" : "INQ"}</span>
+                  <span style="color:#555e7a; font-size:14px; margin-left:10px;">📅 Mulai: <strong style="color:#85B7EB">${_dashStart}</strong> (${_dashDuration} hari)</span>
                 </div>
               </div>
               <div class="pr-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
@@ -4052,15 +4094,17 @@
         return `<div class="upd-task-card">
       <div class="utc-proj">${esc(t.projName)} <span class="badge ${t.projType === 'project' ? 'b-proj' : 'b-inq'}">${t.projType === 'project' ? 'Project' : 'Inquiry'}</span></div>
       <div class="utc-task">${esc(t.name)}</div>
-      <div class="utc-pct" style="color:${t.pct >= 75 ? '#5DCAA5' : t.pct >= 50 ? '#378ADD' : '#FAC775'}">${t.pct}%</div>
+      <div class="utc-pct" style="color:${t.pct >= 75 ? '#5DCAA5' : t.pct >= 50 ? '#378ADD' : '#FAC775'}">Progress saat ini: <strong>${t.pct}%</strong></div>
       <div class="utc-deadline ${dlClass}">⏰ Deadline: ${dlStr}${extBadge}${t.lateReason ? `<span style="margin-left:8px;font-size:12px;color:#EF9F27">Alasan: ${esc(t.lateReason)}</span>` : ""}</div>
       <div class="utc-row">
+        <span style="font-size:13px;color:#555e7a;white-space:nowrap;">Sebelum: <strong style="color:#FAC775">${t.pct}%</strong> &rarr;</span>
         <input type="number" min="0" max="100" value="${t.pct}" id="upd-inp-${t.id}" placeholder="%" style="width:72px">
         <button class="btn-upd" onclick="doUpdate(${t.projId},${t.id},'${esc(person)}')">Update</button>
         ${isLate ? `<button class="btn-delay" onclick="openDelayModal(${t.projId},${t.id},'${esc(person)}')">⚠ Isi Alasan Terlambat</button>` : ""}
       </div>
       <div class="utc-msg" id="utc-msg-${t.id}"></div>
     </div>`;
+
       }).join("");
     }
 
@@ -4082,8 +4126,9 @@
         return;
       }
 
+      const oldPct = t.pct;
       commitUpdate(projId, taskId, newPct, person, isLate, t.lateReason || "");
-      msg.textContent = newPct >= 100 ? "✓ Task selesai!" : "✓ Progress diperbarui.";
+      msg.textContent = newPct >= 100 ? `✓ Task selesai! (${oldPct}% → ${newPct}%)` : `✓ Progress diperbarui. (${oldPct}% → ${newPct}%)`;
       msg.style.color = "#5DCAA5";
       setTimeout(() => { loadTasksForPerson(person); renderDashboard(); }, 1200);
     }
@@ -4199,17 +4244,18 @@
       const taskName = document.getElementById("np-task").value.trim();
       const person = document.getElementById("np-person").value;
       const stageIdx = parseInt(document.getElementById("np-stage").value) || 0;
+      const startDate = document.getElementById("np-start-date").value || todayStr();
       const deadline = document.getElementById("np-deadline").value;
       const priority = parseInt(document.getElementById("np-priority").value) || 1;
       const imgLeft = document.getElementById("np-img-left").value.trim();
       const imgRight = document.getElementById("np-img-right").value.trim();
       const msg = document.getElementById("np-msg");
       if (!name) { msg.textContent = "Nama wajib diisi."; msg.style.color = "#E24B4A"; return; }
-      const p = { id: ++nProjId, name, client: client || "—", type, priority, deadline: deadline || "", imgLeft, imgRight, tasks: [] };
+      const p = { id: ++nProjId, name, client: client || "—", type, priority, startDate, deadline: deadline || "", imgLeft, imgRight, tasks: [] };
       if (taskName) p.tasks.push({ id: ++nTaskId, name: taskName, person: person || employees[0]?.name || "", stageIdx, deadline: deadline || "", pct: 0, lateReason: null, extDeadline: null });
       projects.push(p); saveState();
       msg.textContent = "Project berhasil ditambahkan!"; msg.style.color = "#5DCAA5";
-      ["np-name", "np-client", "np-task", "np-deadline", "np-img-left", "np-img-right"].forEach(id => document.getElementById(id).value = "");
+      ["np-name", "np-client", "np-task", "np-start-date", "np-deadline", "np-img-left", "np-img-right"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("np-person").value = "";
       setTimeout(() => { msg.textContent = ""; }, 3000); renderProjectList();
     }
@@ -4221,6 +4267,17 @@
       const progs = getProjectProgress();
       progs.forEach(p => {
         const pct = p.pctAvg;
+        const startDateVal = getProjectStartDate(p);
+        const durationDays = calculateProjectDuration(p);
+        const startDateStr = formatDateIDStr(startDateVal);
+        const hasRealStartDate = !!p.startDate;
+        const startDateBanner = !hasRealStartDate
+          ? `<div style="background:rgba(239,159,39,0.08);border:1px solid #EF9F2766;border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;flex-wrap:wrap;gap:10px">
+              <span style="font-size:13px;color:#EF9F27;font-weight:600">⚠️ Tanggal Mulai belum diisi — masukkan satu kali untuk mengaktifkan tracking durasi:</span>
+              <input type="date" id="sd-input-${p.id}" style="background:#0f1218;border:1px solid #EF9F27;color:#d0d4e0;padding:5px 8px;border-radius:6px;font-size:13px;">
+              <button style="background:#EF9F27;color:#0a0c10;border:none;border-radius:6px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer;" onclick="setProjectStartDate(${p.id}, document.getElementById('sd-input-${p.id}').value)">💾 Simpan</button>
+            </div>`
+          : '';
         h += `<div style="background:#0a0c10;border:1px solid #1a1f2e;border-radius:8px;padding:12px;margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px">
         <div>
@@ -4236,7 +4293,11 @@
           <button class="btn-warn" onclick="deleteProject(${p.id})">Hapus</button>
         </div>
       </div>
-      <div style="font-size:13px;color:#555e7a;margin-bottom:8px">${esc(p.client)} | Current: <strong style="color:#EF9F27">${esc(p.currentStageName)}</strong></div>
+      <div style="font-size:13px;color:#555e7a;margin-bottom:8px">${esc(p.client)} |
+        📅 Mulai: <strong style="color:${hasRealStartDate ? '#85B7EB' : '#EF9F27'};cursor:pointer" title="Klik untuk ubah tanggal mulai" onclick="editProjectStartDate(${p.id})">${startDateStr}${!hasRealStartDate ? ' (dari sistem)' : ''}</strong>
+        (${durationDays} hari) | Current: <strong style="color:#EF9F27">${esc(p.currentStageName)}</strong>
+      </div>
+      ${startDateBanner}
       <div style="font-size:13px;color:#EF9F27;margin-bottom:8px">🖼️ Foto Kiri: ${p.imgLeft ? `<a href="${p.imgLeft}" target="_blank" style="color:#378ADD">Link</a>` : '—'} | Foto Kanan: ${p.imgRight ? `<a href="${p.imgRight}" target="_blank" style="color:#378ADD">Link</a>` : '—'}</div>
       <button class="btn-blue" style="margin-bottom:8px" onclick="editProjectImages(${p.id})">Edit Foto</button>`;
         const activeTasks = p.tasks.filter(t => t.pct < 100);
@@ -4407,6 +4468,23 @@
       const val = parseInt(prio);
       if (isNaN(val) || val < 1 || val > 5) { alert("Priority harus angka 1-5."); return; }
       p.priority = val; saveState(); renderProjectList();
+    }
+
+    function editProjectStartDate(id) {
+      const p = projects.find(x => x.id === id); if (!p) return;
+      const currentStart = getProjectStartDate(p);
+      const newStart = prompt("Set Tanggal Mulai (YYYY-MM-DD):", currentStart);
+      if (newStart === null) return;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(newStart)) { alert("Format harus YYYY-MM-DD."); return; }
+      p.startDate = newStart; saveState(); renderProjectList();
+    }
+
+    function setProjectStartDate(id, val) {
+      if (!val || !/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+        alert("Pilih tanggal yang valid terlebih dahulu."); return;
+      }
+      const p = projects.find(x => x.id === id); if (!p) return;
+      p.startDate = val; saveState(); renderProjectList();
     }
 
     // ============================================================
@@ -5342,6 +5420,7 @@
       const taskName = document.getElementById("np-task").value.trim();
       const person = document.getElementById("np-person").value;
       const stageIdx = parseInt(document.getElementById("np-stage").value) || 0;
+      const startDate = document.getElementById("np-start-date").value || todayStr();
       const deadline = document.getElementById("np-deadline").value;
       const priority = parseInt(document.getElementById("np-priority").value) || 1;
       const imgLeft = document.getElementById("np-img-left").value.trim();
@@ -5351,7 +5430,7 @@
       const nowStr = new Date().toLocaleString("id-ID");
       const p = {
         id: ++nProjId, name, client: client || "—", type, priority, status: "Aktif",
-        deadline: deadline || "", imgLeft, imgRight, createdAt: nowStr, completedAt: null, tasks: []
+        startDate: startDate, deadline: deadline || "", imgLeft, imgRight, createdAt: nowStr, completedAt: null, tasks: []
       };
       if (taskName) p.tasks.push({
         id: ++nTaskId, name: taskName, person: person || employees[0]?.name || "",
@@ -5361,7 +5440,7 @@
       projects.push(p); saveState();
       pushProjectToSheets(p);
       msg.textContent = "Project berhasil ditambahkan!"; msg.style.color = "#5DCAA5";
-      ["np-name", "np-client", "np-task", "np-deadline", "np-img-left", "np-img-right"].forEach(id => document.getElementById(id).value = "");
+      ["np-name", "np-client", "np-task", "np-start-date", "np-deadline", "np-img-left", "np-img-right"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("np-person").value = "";
       setTimeout(() => { msg.textContent = ""; }, 3000); renderProjectList();
     }
@@ -6385,10 +6464,12 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                   <span style="font-size: 18px; font-weight: 700; color: #fff;">${esc(p.name)}</span>
                   <span class="pr-type ${p.type === 'project' ? 'type-proj' : 'type-inq'}">${p.type === "project" ? "PROJ" : "INQ"}</span>
-                  <span style="font-size: 13px; color: #555e7a;">Â· ${esc(p.client)}</span>
+                  <span style="font-size: 13px; color: #555e7a;">· ${esc(p.client)}</span>
                 </div>
                 <div style="font-size: 14px; color: #9097ab; margin-top: 4px;">
                   PIC Utama: <strong style="color: #85B7EB;">${esc(getInit(pProg.mainPerson))}</strong>
+                  &nbsp;·&nbsp; 📅 Mulai: <strong style="color: #85B7EB;">${formatDateIDStr(getProjectStartDate(p))}</strong>
+                  &nbsp;·&nbsp; ⏱️ Durasi: <strong style="color: #EF9F27;">${calculateProjectDuration(p)} hari</strong>
                 </div>
               </div>
               <div style="text-align: right;">
@@ -6436,19 +6517,43 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
             </div>
 
             <!-- Manual Input Section -->
-            <div style="border-top: 1px solid #1a1f2e; padding-top: 16px; margin-top: 4px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
-              <div>
-                <label style="font-size: 13px; color: #EF9F27; font-weight: 600; display: block; margin-bottom: 6px;">1. Kendala Pekerjaan</label>
-                <textarea class="fi-light" style="width: 100%; min-height: 80px; font-family: inherit; font-size: 14px; padding: 8px; resize: vertical;" placeholder="Tulis kendala pekerjaan..." oninput="updateDailyTrackerDraft(${p.id}, 'kendalaPekerjaan', this.value)">${esc(projData.kendalaPekerjaan || "")}</textarea>
+            <div style="border-top: 1px solid #1a1f2e; padding-top: 16px; margin-top: 4px; display: flex; flex-direction: column; gap: 16px;">
+
+              <!-- Stage-level inputs (per selected stage) -->
+              <div style="background: #0a0c10; border: 1px solid #1a1f2e; border-radius: 10px; padding: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+                <div style="grid-column: 1 / -1; font-size: 12px; color: #555e7a; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">📋 Input Tahap: ${esc(selectedStage.name)}</div>
+                <div>
+                  <label style="font-size: 13px; color: #EF9F27; font-weight: 600; display: block; margin-bottom: 6px;">Obstacle / Kendala</label>
+                  <textarea class="fi-light" style="width: 100%; min-height: 80px; font-family: inherit; font-size: 14px; padding: 8px; resize: vertical; box-sizing: border-box;" placeholder="Tulis kendala atau hambatan pada tahap ini..." oninput="updateDailyTrackerStageDraft(${p.id}, ${p.trackerStageIdx}, 'obstacle', this.value)">${esc((projData.stages && projData.stages[p.trackerStageIdx] && projData.stages[p.trackerStageIdx].obstacle) || "")}</textarea>
+                </div>
+                <div>
+                  <label style="font-size: 13px; color: #85B7EB; font-weight: 600; display: block; margin-bottom: 6px;">Tomorrow Plan / Rencana Besok</label>
+                  <textarea class="fi-light" style="width: 100%; min-height: 80px; font-family: inherit; font-size: 14px; padding: 8px; resize: vertical; box-sizing: border-box;" placeholder="Tulis rencana untuk besok pada tahap ini..." oninput="updateDailyTrackerStageDraft(${p.id}, ${p.trackerStageIdx}, 'tomorrowPlan', this.value)">${esc((projData.stages && projData.stages[p.trackerStageIdx] && projData.stages[p.trackerStageIdx].tomorrowPlan) || "")}</textarea>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                  <label style="font-size: 13px; color: #9097ab; font-weight: 600; display: block; margin-bottom: 8px;">Stage Health</label>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    ${[['🟢', 'On Track', '#1D9E75'], ['🟡', 'At Risk', '#BA7517'], ['🔴', 'Behind Schedule', '#E24B4A']].map(([emoji, label, color]) => {
+          const stageHealthVal = (projData.stages && projData.stages[p.trackerStageIdx] && projData.stages[p.trackerStageIdx].health) || '🟢';
+          const isActive = stageHealthVal === emoji;
+          return `<button onclick="updateDailyTrackerStageDraft(${p.id}, ${p.trackerStageIdx}, 'health', '${emoji}'); renderDailyTracker();" style="padding: 6px 14px; border-radius: 20px; border: 1.5px solid ${isActive ? color : '#2a2f3e'}; background: ${isActive ? color + '22' : 'transparent'}; color: ${isActive ? color : '#555e7a'}; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;">${emoji} ${label}</button>`;
+        }).join('')}
+                  </div>
+                </div>
               </div>
-              <div>
-                <label style="font-size: 13px; color: #EF9F27; font-weight: 600; display: block; margin-bottom: 6px;">2. Hambatan Lapangan</label>
-                <textarea class="fi-light" style="width: 100%; min-height: 80px; font-family: inherit; font-size: 14px; padding: 8px; resize: vertical;" placeholder="Tulis hambatan lapangan..." oninput="updateDailyTrackerDraft(${p.id}, 'hambatanLapangan', this.value)">${esc(projData.hambatanLapangan || "")}</textarea>
+
+              <!-- Overall Project Health -->
+              <div style="background: #0a0c10; border: 1px solid #1a1f2e; border-radius: 10px; padding: 14px;">
+                <label style="font-size: 13px; color: #9097ab; font-weight: 600; display: block; margin-bottom: 8px;">🏥 Overall Project Health</label>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  ${[['🟢', 'On Track', '#1D9E75'], ['🟡', 'At Risk', '#BA7517'], ['🔴', 'Behind Schedule', '#E24B4A']].map(([emoji, label, color]) => {
+          const curHealth = projData.health || '🟢';
+          const isActive = curHealth === emoji;
+          return `<button onclick="updateDailyTrackerDraft(${p.id}, 'health', '${emoji}'); renderDailyTracker();" style="padding: 6px 14px; border-radius: 20px; border: 1.5px solid ${isActive ? color : '#2a2f3e'}; background: ${isActive ? color + '22' : 'transparent'}; color: ${isActive ? color : '#555e7a'}; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;">${emoji} ${label}</button>`;
+        }).join('')}
+                </div>
               </div>
-              <div>
-                <label style="font-size: 13px; color: #EF9F27; font-weight: 600; display: block; margin-bottom: 6px;">3. Catatan Penting Lainnya</label>
-                <textarea class="fi-light" style="width: 100%; min-height: 80px; font-family: inherit; font-size: 14px; padding: 8px; resize: vertical;" placeholder="Tulis catatan penting..." oninput="updateDailyTrackerDraft(${p.id}, 'catatanPenting', this.value)">${esc(projData.catatanPenting || "")}</textarea>
-              </div>
+
             </div>
           </div>
         `;
@@ -6487,23 +6592,29 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
       const todayKey = getTrackerDate();
       const dayData = initLHDayData(todayKey);
       if (!dayData.projects[projId]) {
-        dayData.projects[projId] = { kendala: "", rencana: "Melanjutkan progress tahap berjalan", health: "🟢", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "", kendalaPekerjaan: "", hambatanLapangan: "", catatanPenting: "" };
+        dayData.projects[projId] = { kendala: "", rencana: "Melanjutkan progress tahap berjalan", health: "🟢", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "", stages: {} };
       }
       dayData.projects[projId][field] = val;
+      saveState();
+    }
 
-      // Auto-combine kendalaPekerjaan and hambatanLapangan into kendala
-      const kp = (dayData.projects[projId].kendalaPekerjaan || "").trim();
-      const hl = (dayData.projects[projId].hambatanLapangan || "").trim();
-      let combined = "";
-      if (kp && hl) {
-        combined = `Kendala Pekerjaan: ${kp}\nHambatan Lapangan: ${hl}`;
-      } else if (kp) {
-        combined = kp;
-      } else if (hl) {
-        combined = hl;
+    function updateDailyTrackerStageDraft(projId, stageIdx, field, val) {
+      const todayKey = getTrackerDate();
+      const dayData = initLHDayData(todayKey);
+      if (!dayData.projects[projId]) {
+        dayData.projects[projId] = { kendala: "", rencana: "Melanjutkan progress tahap berjalan", health: "🟢", approved: false, narasiPembuka: "", narasiDetail: "", narasiPenutup: "", stages: {} };
       }
-      dayData.projects[projId].kendala = combined;
-
+      if (!dayData.projects[projId].stages) dayData.projects[projId].stages = {};
+      if (!dayData.projects[projId].stages[stageIdx]) {
+        dayData.projects[projId].stages[stageIdx] = { obstacle: "", tomorrowPlan: "", health: "🟢" };
+      }
+      dayData.projects[projId].stages[stageIdx][field] = val;
+      // Sync the top-level kendala from the current stage obstacle for backward compatibility
+      const p = projects.find(x => x.id === projId);
+      if (p && p.trackerStageIdx !== undefined) {
+        const curStage = dayData.projects[projId].stages[p.trackerStageIdx];
+        if (curStage) dayData.projects[projId].kendala = curStage.obstacle || "";
+      }
       saveState();
     }
 
@@ -6514,13 +6625,13 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
       const todayKey = getTrackerDate();
       const dayData = initLHDayData(todayKey);
 
+      // Check that every active project has at least one stage with an obstacle filled
       let allFilled = activeProjects.length > 0;
       for (const p of activeProjects) {
         const projData = dayData.projects[p.id] || {};
-        const kp = (projData.kendalaPekerjaan || "").trim();
-        const hl = (projData.hambatanLapangan || "").trim();
-        const cp = (projData.catatanPenting || "").trim();
-        if (!kp || !hl || !cp) {
+        const stages = projData.stages || {};
+        const hasObstacle = Object.values(stages).some(s => (s.obstacle || "").trim() !== "");
+        if (!hasObstacle) {
           allFilled = false;
           break;
         }
