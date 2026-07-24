@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+=<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -60,29 +60,30 @@
   <script type="module">
     import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
-    const API_KEY = "AQ.Ab8RN6LkH7asO2hhu9p5JR3NJ2r9AKdIvZA3w_7bjXVXzPNYxQ";
-    const genAI = new GoogleGenerativeAI(API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-    window.geminiModel = model;
+    window.geminiModel = null;
 
     window.initGeminiModel = function (apiKey) {
+      if (!apiKey || !apiKey.trim()) {
+        console.warn("initGeminiModel: API Key kosong, model tidak diinisialisasi.");
+        window.geminiModel = null;
+        return;
+      }
       try {
-        const key = apiKey || API_KEY;
-        const localGenAI = new GoogleGenerativeAI(key);
+        const localGenAI = new GoogleGenerativeAI(apiKey.trim());
         window.geminiModel = localGenAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-        console.log("Gemini model initialized/updated successfully");
+        console.log("Gemini model initialized/updated successfully.");
       } catch (e) {
         console.error("Error initializing Gemini model:", e);
+        window.geminiModel = null;
       }
     };
 
-    // Load saved key from localStorage if it exists on load
+    // Load saved key from localStorage
     try {
       const raw = localStorage.getItem("bhi_state_v6");
       if (raw) {
         const s = JSON.parse(raw);
-        if (s && s.geminiApiKey && s.geminiApiKey.startsWith("AIzaSyBjTVD")) {
+        if (s && s.geminiApiKey && s.geminiApiKey.trim()) {
           window.initGeminiModel(s.geminiApiKey);
         }
       }
@@ -3040,6 +3041,65 @@
       return corrected;
     }
 
+    // ============ SINGLE SOURCE OF TRUTH FOR ACTIVE PROJECTS ============
+    function normalizeProject(p) {
+      if (!p || typeof p !== "object") return null;
+      if (!p.id) p.id = Date.now() + Math.floor(Math.random() * 1000);
+      p.name = p.name ? String(p.name).trim() : "Project Tanpa Nama";
+      p.client = p.client ? String(p.client).trim() : "—";
+      p.type = (p.type && String(p.type).toLowerCase() === "inquiry") ? "inquiry" : "project";
+      p.priority = parseInt(p.priority) || 1;
+      p.imgLeft = p.imgLeft || "";
+      p.imgRight = p.imgRight || "";
+      p.createdAt = p.createdAt || new Date().toLocaleString("id-ID");
+      
+      if (!Array.isArray(p.tasks)) p.tasks = [];
+      p.tasks.forEach((t, idx) => {
+        if (!t.id) t.id = Date.now() + idx + Math.floor(Math.random() * 100);
+        t.name = t.name ? String(t.name).trim() : "Task Tanpa Nama";
+        t.person = t.person || (typeof employees !== "undefined" && employees[0] ? employees[0].name : "Unassigned");
+        t.pct = (t.pct === undefined || t.pct === null || isNaN(parseInt(t.pct))) ? 0 : Math.max(0, Math.min(100, parseInt(t.pct)));
+        t.deadline = t.deadline || "";
+        t.extDeadline = t.extDeadline || null;
+        t.lateReason = (t.lateReason && t.lateReason !== "—") ? String(t.lateReason) : null;
+        t.stageIdx = (t.stageIdx === undefined || t.stageIdx === null || isNaN(parseInt(t.stageIdx))) ? 0 : parseInt(t.stageIdx);
+      });
+
+      const allTasksDone = p.tasks.length > 0 && p.tasks.every(t => t.pct >= 100);
+      if (allTasksDone) {
+        if (String(p.status).toLowerCase() !== "selesai" && String(p.status).toLowerCase() !== "completed") {
+          p.status = "Selesai";
+        }
+        if (!p.completedAt) {
+          p.completedAt = new Date().toLocaleString("id-ID");
+        }
+      } else {
+        if (!p.status || String(p.status).toLowerCase() === "selesai" || String(p.status).toLowerCase() === "completed") {
+          p.status = "Aktif";
+        }
+        if (p.completedAt) {
+          p.completedAt = null;
+        }
+      }
+      return p;
+    }
+
+    function getActiveProjects() {
+      if (!Array.isArray(projects)) projects = [];
+      return projects
+        .map(p => normalizeProject(p))
+        .filter(p => {
+          if (!p) return false;
+          const statusStr = String(p.status || "").trim().toLowerCase();
+          const isCompletedStatus = statusStr === "selesai" || statusStr === "completed";
+          const hasCompletedAt = !!p.completedAt;
+          const allTasks100 = p.tasks.length > 0 && p.tasks.every(t => (t.pct || 0) >= 100);
+          
+          return !(isCompletedStatus && (hasCompletedAt || allTasks100));
+        })
+        .sort((a, b) => (a.priority || 1) - (b.priority || 1));
+    }
+
     // ============ PERSISTENT STORAGE ============
     const STORAGE_KEY = "bhi_state_v6";
 
@@ -3084,7 +3144,7 @@
         }
         if (s.pins) localStorage.setItem("bhi_pins_v5", JSON.stringify(s.pins));
         if (s.laporanHarian) laporanHarian = s.laporanHarian;
-        if (s.geminiApiKey && s.geminiApiKey.startsWith("AIzaSyBjTVD")) {
+        if (s.geminiApiKey) {
           geminiApiKey = s.geminiApiKey;
         } else {
           geminiApiKey = DEFAULT_GEMINI_KEY;
@@ -3110,6 +3170,7 @@
       if (typeof renderArchiveList === 'function') renderArchiveList();
       if (typeof renderLaporanHarian === 'function') renderLaporanHarian();
       if (typeof renderDailyTracker === 'function') renderDailyTracker();
+      if (typeof renderNarasiKlien === 'function') renderNarasiKlien();
     }
 
     function saveState() {
@@ -3263,8 +3324,7 @@
     let sheetsUrl = "";
     let spreadsheetUrl = "";
     let laporanHarian = {};
-    const DEFAULT_GEMINI_KEY = "AQ.Ab8RN6LkH7asO2hhu9p5JR3NJ2r9AKdIvZA3w_7bjXVXzPNYxQ";
-    let geminiApiKey = DEFAULT_GEMINI_KEY;
+    let geminiApiKey = "";
     let waToken = "gRJJcDgsrMaV6ZVkd71h";
     let waGroupTarget = "";
     let gdrivePengumuman = "https://script.google.com/macros/s/AKfycbyP3A4rLcvdluNiri4wOrGrjydSWkUBKllYuFW_gd0oK-DXgfNp09lqXSJbmGaZrP1LhQ/exec";
@@ -3294,15 +3354,14 @@
           gdriveVision = s.gdrive.vis || "";
         }
         if (s.laporanHarian) laporanHarian = s.laporanHarian;
-        if (s.geminiApiKey && s.geminiApiKey.startsWith("AIzaSyBjTVD")) {
+        if (s.geminiApiKey && s.geminiApiKey.trim()) {
           geminiApiKey = s.geminiApiKey;
-        } else {
-          geminiApiKey = DEFAULT_GEMINI_KEY;
         }
       }
     }
 
     initGlobalState();
+
 
     // Listen for updates from other tabs
     window.addEventListener('storage', (e) => {
@@ -3376,8 +3435,8 @@
       const today = todayStr();
       let overdue = [], todayT = [], risk = [], tomorrow = [];
       projects.forEach(p => {
-        p.tasks.forEach(t => {
-          if (t.pct >= 100) return;
+        (p.tasks || []).forEach(t => {
+          if ((t.pct || 0) >= 100) return;
           const d = diffDays(t.extDeadline || t.deadline);
           const obj = { proj: p.name, client: p.client || "", task: t.name, person: t.person, deadline: t.extDeadline || t.deadline, d, priority: p.priority || 1 };
           if (d === null) return;
@@ -3403,14 +3462,16 @@
     }
 
     function getProjectProgress() {
+      if (!Array.isArray(projects)) projects = [];
       return projects.map(p => {
+        p = normalizeProject(p) || p;
         const stages = p.type === "inquiry" ? INQUIRY_STAGES : PROJECT_STAGES;
         let totalWeighted = 0;
         let currentIdx = -1;
 
         // Calculate stage details
         const stageDetails = stages.map((s, idx) => {
-          const stTasks = p.tasks.filter(t => t.stageIdx === idx);
+          const stTasks = (p.tasks || []).filter(t => (t.stageIdx || 0) === idx);
           let stPct = 0;
           let status = "Not Started";
 
@@ -3439,13 +3500,13 @@
         }
 
         const pctAvg = Math.round(totalWeighted);
-        const done = p.tasks.filter(t => t.pct >= 100).length;
-        const total = p.tasks.length;
-        const currentStageName = currentIdx >= 0 ? stages[currentIdx].name : "Not Started";
+        const done = (p.tasks || []).filter(t => (t.pct || 0) >= 100).length;
+        const total = (p.tasks || []).length;
+        const currentStageName = currentIdx >= 0 ? stages[currentIdx].name : (stages[0] ? stages[0].name : "Initial Stage");
 
         const mainPerson = (() => {
           const cnt = {};
-          p.tasks.forEach(t => { cnt[t.person] = (cnt[t.person] || 0) + 1; });
+          (p.tasks || []).forEach(t => { if (t.person) cnt[t.person] = (cnt[t.person] || 0) + 1; });
           return Object.entries(cnt).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
         })();
 
@@ -3464,7 +3525,7 @@
           stageDetails,
           priority: p.priority || 1
         };
-      }).sort((a, b) => b.priority - a.priority);
+      }).sort((a, b) => (a.priority || 1) - (b.priority || 1));
     }
 
     // ============ EXPORT HELPERS ============
@@ -4074,7 +4135,7 @@
 
       const myTasks = [];
       projects.forEach(p => {
-        p.tasks.forEach(t => {
+        (p.tasks || []).forEach(t => {
           if (t.person === person && t.pct < 100) {
             myTasks.push({ ...t, projId: p.id, projName: p.name, projType: p.type });
           }
@@ -4209,15 +4270,21 @@
         reasons = reasons.map(r => r === "Lainnya" ? `Lainnya: ${custom}` : r);
       }
       const reasonStr = reasons.join(" | ");
-      const { projId, taskId, person, newPct } = delayCtx;
+      const { projId, taskId, person, newPct, fromTracker } = delayCtx;
       const p = projects.find(x => x.id === projId);
       const t = p?.tasks.find(x => x.id === taskId);
       if (t) t.lateReason = reasonStr;
       commitUpdate(projId, taskId, newPct, person, true, reasonStr);
       closeModal("delay-modal");
-      const msg = document.getElementById("utc-msg-" + taskId);
-      if (msg) { msg.textContent = "✓ Update + alasan tersimpan."; msg.style.color = "#5DCAA5"; }
-      setTimeout(() => { loadTasksForPerson(person); renderDashboard(); }, 1200);
+      if (fromTracker) {
+        const msg = document.getElementById("dt-utc-msg-" + taskId);
+        if (msg) { msg.textContent = "✓ Update + alasan tersimpan."; msg.style.color = "#5DCAA5"; }
+        setTimeout(() => { renderDailyTracker(); renderDashboard(); }, 1200);
+      } else {
+        const msg = document.getElementById("utc-msg-" + taskId);
+        if (msg) { msg.textContent = "✓ Update + alasan tersimpan."; msg.style.color = "#5DCAA5"; }
+        setTimeout(() => { loadTasksForPerson(person); renderDashboard(); }, 1200);
+      }
     }
 
     // ============================================================
@@ -4587,7 +4654,7 @@
       }).join("");
     }
     function buildWAMsg(e) {
-      const tasks = projects.flatMap(p => p.tasks.map(t => ({ ...t, proj: p.name, client: p.client }))).filter(t => t.person === e.name && t.pct < 100);
+      const tasks = projects.flatMap(p => (p.tasks || []).map(t => ({ ...t, proj: p.name, client: p.client }))).filter(t => t.person === e.name && t.pct < 100);
       if (!tasks.length) return `Halo ${e.name}, semua task selesai. Terima kasih!`;
       let msg = `Halo ${e.name}, update task:\n\n`;
       tasks.forEach(t => { const dl = fmtDeadline(t.extDeadline || t.deadline); msg += `• [${t.client.toUpperCase()}] - [${t.proj}]: ${t.name}\n  Progress: ${t.pct}% | DL: ${dl}\n\n`; });
@@ -5576,7 +5643,7 @@
       let isBehind = false;
       let isAtRisk = false;
 
-      p.tasks.forEach(t => {
+      (p.tasks || []).forEach(t => {
         if (t.pct < 100) {
           if (t.lateReason && t.lateReason.trim() !== "") {
             isBlocked = true;
@@ -5615,22 +5682,15 @@
     }
 
     function ensureGeminiApiKey() {
-      if (geminiApiKey && geminiApiKey.trim()) return true;
-
-      const inputKey = prompt("Silakan masukkan Gemini API Key Anda untuk menghubungkan ke AI (atau kosongkan untuk membatalkan):");
-      if (inputKey && inputKey.trim()) {
-        geminiApiKey = inputKey.trim();
-        saveState();
-        if (typeof window.initGeminiModel === 'function') {
+      // Re-init model if key exists but model isn't initialized yet
+      if (geminiApiKey && geminiApiKey.trim()) {
+        if (!window.geminiModel && typeof window.initGeminiModel === 'function') {
           window.initGeminiModel(geminiApiKey);
         }
-
-        const keyInput = document.getElementById("lh-gemini-key");
-        if (keyInput) keyInput.value = geminiApiKey;
         return true;
       }
 
-      alert("Silakan masukkan Gemini API Key terlebih dahulu di Pengaturan Gemini AI.");
+      alert("⚠ API Key Gemini belum diatur!\n\nSilakan masukkan API Key Gemini yang valid (format: AIzaSy...) di bagian Pengaturan Gemini AI pada tab Laporan Harian.\n\nDapatkan API Key gratis di: https://aistudio.google.com/app/apikey");
 
       const lhPage = document.getElementById("page-laporan-harian");
       if (lhPage && !lhPage.classList.contains("active")) {
@@ -5656,14 +5716,19 @@
       const msg = document.getElementById("lh-ai-key-msg");
       if (input && msg) {
         const key = input.value.trim();
+        if (!key) {
+          msg.textContent = "⚠ API Key tidak boleh kosong. Masukkan key yang valid (format: AIzaSy...)";
+          msg.style.color = "#E24B4A";
+          return;
+        }
         geminiApiKey = key;
         saveState();
         if (typeof window.initGeminiModel === 'function') {
           window.initGeminiModel(geminiApiKey);
         }
-        msg.textContent = "✓ Key berhasil disimpan!";
+        msg.textContent = "✓ API Key berhasil disimpan dan diaktifkan! Narasi siap di-generate.";
         msg.style.color = "#5DCAA5";
-        setTimeout(() => { msg.textContent = ""; }, 3000);
+        setTimeout(() => { msg.textContent = ""; }, 4000);
       }
     }
 
@@ -5844,8 +5909,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         return;
       }
 
-      const activeProjects = projects.filter(p => p.status === "Aktif")
-        .sort((a, b) => (a.priority || 1) - (b.priority || 1));
+      const activeProjects = getActiveProjects();
 
       const rows = activeProjects.map(p => {
         const projectTodayLogs = updateLog.filter(l => l.projId === p.id && periodFormattedDates.some(fDate => isTodayLog(l.time, fDate)));
@@ -6015,7 +6079,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
       }
 
       // 2. WhatsApp Group Notification for Priority 1 Projects
-      const activeProjects = projects.filter(p => p.status === "Aktif");
+      const activeProjects = getActiveProjects();
       activeProjects.forEach(p => {
         if (p.priority === 1) {
           if (!dayData.projects[p.id]) {
@@ -6057,8 +6121,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         alert("TIPS: Spreadsheet URL belum diisi di tab Export / Drive. Hubungkan agar spreadsheet langsung terbuka otomatis saat ekspor!");
       }
 
-      const activeProjects = projects.filter(p => p.status === "Aktif")
-        .sort((a, b) => (a.priority || 1) - (b.priority || 1));
+      const activeProjects = getActiveProjects();
 
       const rows = activeProjects.map(p => {
         const projectTodayLogs = updateLog.filter(l => l.projId === p.id && periodFormattedDates.some(fDate => isTodayLog(l.time, fDate)));
@@ -6225,8 +6288,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
       }
 
       // Compile active projects sorted by priority ascending
-      const activeProjects = projects.filter(p => p.status === "Aktif")
-        .sort((a, b) => (a.priority || 1) - (b.priority || 1));
+      const activeProjects = getActiveProjects();
 
       const container = document.getElementById("lh-report-container");
       if (!container) return;
@@ -6368,9 +6430,9 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
       const container = document.getElementById("dt-jobs-container");
       if (!container) return;
 
-      const activeProjects = projects.filter(p => p.status === "Aktif");
+      const activeProjects = projects.map(p => normalizeProject(p)).sort((a, b) => (a.priority || 1) - (b.priority || 1));
       if (activeProjects.length === 0) {
-        container.innerHTML = `<div style="text-align: center; padding: 40px; color: #555e7a; font-size: 16px;">Tidak ada project or inquiry aktif saat ini.</div>`;
+        container.innerHTML = `<div style="text-align: center; padding: 40px; color: #555e7a; font-size: 16px;">Tidak ada project or inquiry saat ini.</div>`;
         return;
       }
 
@@ -6386,8 +6448,12 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
       let html = "";
 
       activeProjects.forEach(p => {
-        const pProg = progressList.find(x => x.id === p.id);
-        if (!pProg) return;
+        const pProg = progressList.find(x => x.id === p.id) || {
+          pctAvg: 0,
+          currentStageName: "Initial Stage",
+          mainPerson: "Unassigned",
+          stageDetails: []
+        };
 
         const stages = p.type === "inquiry" ? INQUIRY_STAGES : PROJECT_STAGES;
 
@@ -6398,8 +6464,8 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
           p.trackerStageIdx = idx;
         }
 
-        const selectedStage = stages[p.trackerStageIdx];
-        const stageDetail = pProg.stageDetails[p.trackerStageIdx] || { pct: 0, status: "Not Started", tasks: [] };
+        const selectedStage = stages[p.trackerStageIdx] || stages[0] || { name: "Initial Stage" };
+        const stageDetail = (pProg.stageDetails && pProg.stageDetails[p.trackerStageIdx]) || { pct: 0, status: "Not Started", tasks: [] };
 
         const progressColor = getProgColor(stageDetail.pct);
         const overallProgColor = getProgColor(pProg.pctAvg);
@@ -6407,8 +6473,9 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         // Render stage indicators (timeline/breadcrumb)
         const timelineHtml = stages.map((s, idx) => {
           const isActive = idx === p.trackerStageIdx;
-          const isCompleted = pProg.stageDetails[idx]?.status === "Completed";
-          const isProgress = pProg.stageDetails[idx]?.status === "In Progress";
+          const stageDet = (pProg.stageDetails && pProg.stageDetails[idx]) || { status: "Not Started" };
+          const isCompleted = stageDet.status === "Completed";
+          const isProgress = stageDet.status === "In Progress";
 
           let stateColor = "#1a1f2e";
           let borderStyle = "1px solid #2a2f3e";
@@ -6435,7 +6502,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         }).join(' <div style="flex-shrink:0; display:flex; align-items:center; color:#2a2f3e; font-weight:bold;">\u{279a}</div> ');
 
         // Render tasks inside the selected stage
-        const tasksHtml = stageDetail.tasks.map(t => {
+        const tasksHtml = (stageDetail.tasks || []).map(t => {
           return `
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.01); border: 1px solid #1a1f2e; border-radius: 6px; font-size: 14px;">
               <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
@@ -6449,6 +6516,66 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
             </div>
           `;
         }).join("") || `<div style="font-size: 13px; color: #555e7a; font-style: italic; text-align: center; padding: 12px;">Tidak ada task di tahap ini.</div>`;
+
+        const todayStrID = formatDateID(todayKey);
+        const projectTodayLogs = updateLog.filter(l => l.projId === p.id && isTodayLog(l.time, todayStrID));
+
+        // Render all active tasks (or tasks updated today)
+        const activeTasks = (p.tasks || []).filter(t => t.pct < 100 || projectTodayLogs.some(l => l.taskId === t.id));
+        let activeTasksHtml = "";
+        if (activeTasks.length > 0) {
+          activeTasksHtml = activeTasks.map(t => {
+            const dl = t.extDeadline || t.deadline;
+            const diff = diffDays(dl);
+            const isLate = diff !== null && diff < 0;
+            const dlStr = fmtDeadline(dl);
+            const extBadge = t.extDeadline ? `<span style="font-size:11px;color:#EF9F27;margin-left:4px">(diperpanjang)</span>` : "";
+            const lateReasonText = t.lateReason ? `<span style="margin-left:8px;font-size:11px;color:#EF9F27">Alasan: ${esc(t.lateReason)}</span>` : "";
+            const taskStageName = stages[t.stageIdx || 0]?.name || "—";
+            
+            const taskTodayLogs = projectTodayLogs.filter(l => l.taskId === t.id);
+            let beforeAfterHtml = "";
+            let pctBefore = t.pct;
+            if (taskTodayLogs.length > 0) {
+              const firstLog = taskTodayLogs[0];
+              const lastLog = taskTodayLogs[taskTodayLogs.length - 1];
+              pctBefore = firstLog.before;
+              beforeAfterHtml = `<div style="font-size: 12px; color: #5DCAA5; margin-top: 4px; font-weight: 600;">✅ Update Hari Ini: ${pctBefore}% ➔ ${lastLog.after}%</div>`;
+            } else {
+              beforeAfterHtml = `<div style="font-size: 11px; color: #555e7a; margin-top: 4px; font-weight: 600;">Belum ada update hari ini</div>`;
+            }
+
+            return `
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid #1a1f2e; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+                  <div>
+                    <strong style="color: #fff; font-size: 14px;">${esc(t.name)}</strong>
+                    <div style="font-size: 12px; color: #555e7a; margin-top: 2px;">
+                      Tahap: <span style="color: #d0d4e0;">${esc(taskStageName)}</span> &nbsp;·&nbsp; PIC: <span style="color: #85B7EB;">${esc(t.person)}</span>
+                    </div>
+                    <div style="font-size: 12px; color: ${isLate ? '#E24B4A' : '#555e7a'}; margin-top: 2px;">
+                      ⏰ Deadline: ${dlStr}${extBadge}${lateReasonText}
+                    </div>
+                    ${beforeAfterHtml}
+                  </div>
+                  <div style="font-size: 18px; font-weight: 700; color: ${t.pct >= 100 ? '#5DCAA5' : t.pct >= 75 ? '#378ADD' : '#FAC775'}; text-align: right;">
+                    <div style="font-size: 10px; color: #555e7a; font-weight: 600; text-transform: uppercase;">Progress Sekarang</div>
+                    ${t.pct}%
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px;">
+                  <span style="font-size: 12px; color: #555e7a;">Input Progress Baru:</span>
+                  <input type="number" min="0" max="100" value="${t.pct}" id="dt-upd-inp-${t.id}" style="width: 60px; background: rgba(10, 12, 16, 0.7); border: 1px solid #1a1f2e; color: #fff; padding: 4px 6px; border-radius: 4px; font-size: 13px;" placeholder="%">
+                  <button class="btn-upd" style="padding: 4px 10px; font-size: 12px;" onclick="doUpdateFromTracker(${p.id}, ${t.id}, '${esc(t.person)}')">Update</button>
+                  ${isLate ? `<button class="btn-delay" style="padding: 4px 10px; font-size: 12px;" onclick="openDelayModalFromTracker(${p.id}, ${t.id}, '${esc(t.person)}')">⚠ Alasan Terlambat</button>` : ""}
+                  <span id="dt-utc-msg-${t.id}" style="font-size: 12px; margin-left: 8px;"></span>
+                </div>
+              </div>
+            `;
+          }).join("");
+        } else {
+          activeTasksHtml = `<div style="font-size: 13px; color: #555e7a; font-style: italic; text-align: center; padding: 12px;">🎉 Semua task selesai!</div>`;
+        }
 
         // Initialize project data in dayData if not exists
         if (!dayData.projects[p.id]) {
@@ -6475,6 +6602,19 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
               <div style="text-align: right;">
                 <div style="font-size: 13px; color: #555e7a;">Overall Progress</div>
                 <div style="font-size: 20px; font-weight: 800; color: ${overallProgColor};">${pProg.pctAvg}%</div>
+                ${projectTodayLogs.length > 0 ? (() => {
+                  let totalPctBefore = 0;
+                  let taskCount = 0;
+                  if (p.tasks && p.tasks.length > 0) {
+                    p.tasks.forEach(task => {
+                      const tLogs = projectTodayLogs.filter(l => l.taskId === task.id);
+                      totalPctBefore += (tLogs.length > 0) ? tLogs[0].before : task.pct;
+                    });
+                    taskCount = p.tasks.length;
+                  }
+                  const pctAvgBefore = taskCount > 0 ? Math.round(totalPctBefore / taskCount) : 0;
+                  return `<div style="font-size: 11px; color: #5DCAA5; font-weight: 600; margin-top: 4px;">✅ Hari ini: ${pctAvgBefore}% ➔ ${pProg.pctAvg}%</div>`;
+                })() : `<div style="font-size: 11px; color: #555e7a; margin-top: 4px;">Belum ada update</div>`}
               </div>
             </div>
 
@@ -6511,8 +6651,18 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
 
               <!-- Task list in selected stage -->
               <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
-                <div style="font-size: 12px; color: #555e7a; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Daftar Task:</div>
+                <div style="font-size: 12px; color: #555e7a; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Daftar Task di Tahap Dipilih:</div>
                 ${tasksHtml}
+              </div>
+            </div>
+
+            <!-- Active Tasks Update Section -->
+            <div style="background: #0a0c10; border: 1px solid #1a1f2e; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+              <div style="font-size: 14px; font-weight: 600; color: #85B7EB; border-bottom: 1px solid #1a1f2e; padding-bottom: 8px;">
+                📝 Update Progress Task Aktif
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                ${activeTasksHtml}
               </div>
             </div>
 
@@ -6560,6 +6710,36 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
       });
 
       container.innerHTML = html;
+    }
+
+    function doUpdateFromTracker(projId, taskId, person) {
+      const newPct = parseInt(document.getElementById("dt-upd-inp-" + taskId).value);
+      const msg = document.getElementById("dt-utc-msg-" + taskId);
+      if (isNaN(newPct) || newPct < 0 || newPct > 100) { msg.textContent = "Masukkan angka 0–100."; msg.style.color = "#E24B4A"; return; }
+
+      const p = projects.find(x => x.id === projId);
+      const t = p?.tasks.find(x => x.id === taskId);
+      if (!t) { msg.textContent = "Task tidak ditemukan."; return; }
+
+      const dl = t.extDeadline || t.deadline;
+      const diff = diffDays(dl);
+      const isLate = diff !== null && diff < 0;
+
+      if (isLate && !t.lateReason && newPct < 100) {
+        openDelayModalFromTracker(projId, taskId, person, newPct);
+        return;
+      }
+
+      const oldPct = t.pct;
+      commitUpdate(projId, taskId, newPct, person, isLate, t.lateReason || "");
+      msg.textContent = newPct >= 100 ? `✓ Selesai! (${oldPct}% → ${newPct}%)` : `✓ Progress diperbarui. (${oldPct}% → ${newPct}%)`;
+      msg.style.color = "#5DCAA5";
+      setTimeout(() => { renderDailyTracker(); renderDashboard(); }, 1200);
+    }
+
+    function openDelayModalFromTracker(projId, taskId, person, newPct) {
+      openDelayModal(projId, taskId, person, newPct);
+      delayCtx.fromTracker = true;
     }
 
     function changeTrackerStage(projId, delta) {
@@ -6621,7 +6801,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
     function saveDailyTrackerData() {
       saveState();
 
-      const activeProjects = projects.filter(p => p.status === "Aktif");
+      const activeProjects = getActiveProjects();
       const todayKey = getTrackerDate();
       const dayData = initLHDayData(todayKey);
 
@@ -6681,9 +6861,8 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
         statusSelect.value = dayData.reportStatus || "Menunggu";
       }
 
-      // Compile active projects sorted by priority ascending
-      const activeProjects = projects.filter(p => p.status === "Aktif")
-        .sort((a, b) => (a.priority || 1) - (b.priority || 1));
+      // Compile active projects (Single Source of Truth)
+      const activeProjects = getActiveProjects();
 
       const refDateParts = todayKey.split("-");
       const refDate = new Date(parseInt(refDateParts[0], 10), parseInt(refDateParts[1], 10) - 1, parseInt(refDateParts[2], 10));
@@ -6928,7 +7107,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
       dayData.projects[projId].approved = !dayData.projects[projId].approved;
 
       // Auto-update report status: if all active projects with narratives are approved → "Disetujui"
-      const activeProjects = projects.filter(p => p.status === "Aktif");
+      const activeProjects = getActiveProjects();
       let hasAnyNarrative = false;
       let allApproved = true;
       activeProjects.forEach(p => {
@@ -7094,7 +7273,7 @@ Jangan tambahkan teks pengantar, penjelas, atau penutup lain di luar tag tersebu
     }
 
     async function generateAllProjectNarratives() {
-      const activeProjects = projects.filter(p => p.status === "Aktif");
+      const activeProjects = getActiveProjects();
       if (activeProjects.length === 0) {
         alert("Tidak ada project aktif saat ini.");
         return;
@@ -7136,7 +7315,7 @@ Jangan tambahkan teks pengantar, penjelas, atau penutup lain di luar tag tersebu
 
       const todayKey = todayStr();
       const dayData = initLHDayData(todayKey);
-      const activeProjects = projects.filter(p => p.status === "Aktif");
+      const activeProjects = getActiveProjects();
 
       let target = waGroupTarget;
       const selectedManagerName = dayData.selectedManagement;
@@ -7232,8 +7411,7 @@ Jangan tambahkan teks pengantar, penjelas, atau penutup lain di luar tag tersebu
       const todayKey = todayStr();
       const dayData = initLHDayData(todayKey);
 
-      const activeProjects = projects.filter(p => p.status === "Aktif")
-        .sort((a, b) => (a.priority || 1) - (b.priority || 1));
+      const activeProjects = getActiveProjects();
 
       const body = document.getElementById("preview-narasi-body");
       if (!body) return;
