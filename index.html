@@ -1,4 +1,4 @@
-=<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -6517,7 +6517,7 @@ Jangan tambahkan teks pengantar atau penutup lain, langsung berikan teks narasin
           `;
         }).join("") || `<div style="font-size: 13px; color: #555e7a; font-style: italic; text-align: center; padding: 12px;">Tidak ada task di tahap ini.</div>`;
 
-        const todayStrID = formatDateID(todayKey);
+        const todayStrID = formatDateIDStr(todayKey);
         const projectTodayLogs = updateLog.filter(l => l.projId === p.id && isTodayLog(l.time, todayStrID));
 
         // Render all active tasks (or tasks updated today)
